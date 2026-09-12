@@ -13,10 +13,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
 
+staticSites:
   # 2. Frontend Static Site (React + Vite + Tailwind)
-  - type: web
-    name: constructai-frontend
-    env: static
+  - name: constructai-frontend
     plan: free
     region: singapore
     buildCommand: "cd frontend && npm install --legacy-peer-deps && npm run build"
