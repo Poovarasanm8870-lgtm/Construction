@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, 
   Sparkles, 
@@ -7,18 +7,35 @@ import {
   Compass, 
   Briefcase, 
   Lock,
-  Home
+  Home,
+  Menu,
+  X
 } from 'lucide-react';
 import { bouncyTap } from '../animations/iosSprings';
 
 export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOpenHiddenAdmin }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'services', label: '5 Core Services', icon: Briefcase },
+    { id: 'blueprints', label: 'House Blueprints', icon: Compass },
+    { id: 'portfolio', label: 'Portfolio', icon: Sparkles },
+    { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
+  ];
+
+  const handleNavClick = (tabId) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/90 border-b border-slate-200 px-4 lg:px-8 py-3 shadow-sm transition-all duration-300">
+    <header className="sticky top-0 z-50 w-full backdrop-blur-xl bg-white/95 border-b border-slate-200/90 px-4 lg:px-8 py-3 shadow-sm transition-all duration-300">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
         {/* Brand Logo */}
         <div 
-          onClick={() => setActiveTab('home')}
+          onClick={() => handleNavClick('home')}
           className="flex items-center space-x-3 cursor-pointer"
         >
           <motion.div 
@@ -44,66 +61,26 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
           </div>
         </div>
 
-        {/* Public Navigation Tabs */}
+        {/* Desktop Navigation Tabs */}
         <nav className="hidden md:flex items-center p-1.5 rounded-full bg-slate-100 border border-slate-200 space-x-1">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              activeTab === 'home'
-                ? 'bg-white text-slate-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Home
-          </button>
-
-          <button
-            onClick={() => setActiveTab('services')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-              activeTab === 'services'
-                ? 'bg-white text-slate-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5 text-amber-600" />
-            <span>5 Core Services</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('blueprints')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-              activeTab === 'blueprints'
-                ? 'bg-white text-slate-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5 text-amber-600" />
-            <span>House Blueprints</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('portfolio')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-              activeTab === 'portfolio'
-                ? 'bg-white text-slate-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Portfolio</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-              activeTab === 'chat'
-                ? 'bg-white text-slate-900 shadow-sm font-bold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
-            <span>AI Assistant</span>
-          </button>
+          {navItems.map((item) => {
+            const IconComp = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                  isActive
+                    ? 'bg-white text-slate-900 shadow-sm font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <IconComp className="w-3.5 h-3.5 text-amber-600" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
         </nav>
 
         {/* Right Action Bar */}
@@ -111,7 +88,7 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
           <motion.button
             whileTap={bouncyTap}
             onClick={onToggleChat}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 transition-all shadow-sm ${
               isChatOpen
                 ? 'bg-amber-500 text-white font-bold'
                 : 'bg-slate-900 text-white hover:bg-slate-800'
@@ -121,7 +98,7 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
             <span className="hidden sm:inline">Ask AI Assistant</span>
           </motion.button>
 
-          {/* Discreet Admin Lock Button */}
+          {/* Staff Lock Button */}
           <button
             onClick={onOpenHiddenAdmin}
             title="Internal Staff Login"
@@ -129,8 +106,49 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
           >
             <Lock className="w-4 h-4" />
           </button>
+
+          {/* Mobile Hamburger Menu Toggle Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            className="md:hidden p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+            aria-label="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Animated Mobile Navigation Menu Dropdown */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="md:hidden pt-3 pb-2 border-t border-slate-200/80 mt-3 space-y-1 overflow-hidden"
+          >
+            {navItems.map((item) => {
+              const IconComp = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`w-full px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-3 ${
+                    isActive
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <IconComp className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-amber-600'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
