@@ -93,11 +93,42 @@ class Material(models.Model):
         return self.name
 
 
-class LaborRate(models.Model):
-    trade = models.CharField(max_length=100)
-    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2)
-    sqft_rate = models.DecimalField(max_digits=8, decimal_places=2)
-    region = models.CharField(max_length=100, default='Mumbai MMR')
+class RoomLayout(models.Model):
+    project = models.ForeignKey(Project, related_name='room_layouts', on_delete=models.CASCADE, null=True, blank=True)
+    room_name = models.CharField(max_length=150)
+    bhk_type = models.CharField(max_length=50, default='3 BHK')
+    sqft = models.IntegerField(default=450)
+    dimensions = models.CharField(max_length=100, default='20.0 ft x 22.5 ft')
+    finishes = models.TextField(default='Italian Marble Flooring, UPVC Double Glazed Windows, Cove Lighting')
+    blueprint_2d = models.URLField(max_length=500, blank=True, null=True)
+    render_3d = models.URLField(max_length=500, blank=True, null=True)
+    x_percent = models.IntegerField(default=50)
+    y_percent = models.IntegerField(default=50)
 
     def __str__(self):
-        return self.trade
+        return f"{self.room_name} ({self.sqft} sq ft)"
+
+
+class ChatLog(models.Model):
+    session_id = models.CharField(max_length=100)
+    user_query = models.TextField()
+    bot_response = models.TextField()
+    inquired_sqft = models.IntegerField(default=1500)
+    estimated_cost_inr = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"ChatLog {self.session_id} - {self.inquired_sqft} sq ft"
+
+
+class CostMetric(models.Model):
+    region = models.CharField(max_length=100, default='Mumbai MMR')
+    base_rate_per_sqft = models.DecimalField(max_digits=10, decimal_places=2, default=1850.00)
+    cement_ratio = models.DecimalField(max_digits=6, decimal_places=2, default=0.40) # bags per sqft
+    steel_ratio = models.DecimalField(max_digits=6, decimal_places=4, default=0.0035) # tons per sqft
+    brick_ratio = models.DecimalField(max_digits=6, decimal_places=2, default=18.0) # bricks per sqft
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.region} @ ₹ {self.base_rate_per_sqft}/sq ft"
+

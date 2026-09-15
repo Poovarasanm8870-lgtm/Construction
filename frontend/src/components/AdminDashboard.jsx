@@ -233,3 +233,6 @@ export function AdminDashboard() {
     </motion.div>
   );
 }
+
+export default AdminDashboard;
+

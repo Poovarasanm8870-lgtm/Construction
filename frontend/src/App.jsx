@@ -4,6 +4,9 @@ import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ServicesCatalog } from './components/ServicesCatalog';
 import { ProjectSlider } from './components/ProjectSlider';
+import PortfolioSwiper from './components/PortfolioSwiper';
+import RoomLayoutModal from './components/RoomLayoutModal';
+import GroqChatEstimator from './components/GroqChatEstimator';
 import { HouseVisualizer } from './components/HouseVisualizer';
 import { HouseControls } from './components/HouseControls';
 import { CostBreakdownCard } from './components/CostBreakdownCard';
@@ -12,6 +15,7 @@ import { ChatbotDrawer } from './components/ChatbotDrawer';
 import { AdminDashboard } from './components/AdminDashboard';
 import { MaterialMarketplace } from './components/MaterialMarketplace';
 import { staggerContainer, fadeInUp } from './utils/animations';
+
 
 export default function App() {
   const [houseConfig, setHouseConfig] = useState({
@@ -31,6 +35,14 @@ export default function App() {
   const [floorplans, setFloorplans] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedModalProject, setSelectedModalProject] = useState(null);
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+
+  const handleOpenRoomLayout = (project) => {
+    setSelectedModalProject(project);
+    setIsRoomModalOpen(true);
+  };
+
 
   // Fetch Pricing Calculation
   const fetchCalculation = useCallback(async (configToUse) => {
@@ -159,7 +171,7 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-12">
         
-        {/* OVERVIEW PAGE (HERO + SERVICES + PROJECTS) */}
+        {/* OVERVIEW PAGE (HERO + SERVICES + PORTFOLIO SWIPER + GROQ CHAT) */}
         {activeTab === 'overview' && (
           <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-12">
             <HeroSection
@@ -167,7 +179,17 @@ export default function App() {
               onViewProjectsClick={() => setActiveTab('projects')}
             />
             <ServicesCatalog services={services} onSelectService={() => setIsChatOpen(true)} />
-            <ProjectSlider projects={projects} onSelectProject={() => setActiveTab('visualizer')} />
+            <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
+            <div className="py-6">
+              <div className="text-center max-w-2xl mx-auto mb-8">
+                <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200">
+                  Interactive AI Assistant
+                </span>
+                <h2 className="text-3xl font-extrabold text-slate-900 mt-2">Groq AI Construction Estimator</h2>
+                <p className="text-slate-600 text-sm mt-1">Get itemized material quantities & civil estimates instantly</p>
+              </div>
+              <GroqChatEstimator initialSqft={1500} onBookingTrigger={() => setIsChatOpen(true)} />
+            </div>
           </motion.div>
         )}
 
@@ -181,9 +203,10 @@ export default function App() {
         {/* PROJECTS TAB */}
         {activeTab === 'projects' && (
           <motion.div variants={fadeInUp} initial="hidden" animate="show">
-            <ProjectSlider projects={projects} onSelectProject={() => setActiveTab('visualizer')} />
+            <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
           </motion.div>
         )}
+
 
         {/* 3D STUDIO TAB */}
         {activeTab === 'visualizer' && (
@@ -241,7 +264,15 @@ export default function App() {
         currentConfig={houseConfig}
       />
 
+      {/* Room Layout Inspector Modal */}
+      <RoomLayoutModal
+        project={selectedModalProject}
+        isOpen={isRoomModalOpen}
+        onClose={() => setIsRoomModalOpen(false)}
+      />
+
       {/* Footer */}
+
       <footer className="w-full border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <p>ConstructAI Pro • Modern Construction Services & Groq AI Architecture Platform</p>
       </footer>

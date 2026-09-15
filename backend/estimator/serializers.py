@@ -28,6 +28,21 @@ class ChatbotSessionSerializer(serializers.ModelSerializer):
         model = ChatbotSession
         fields = '__all__'
 
+class RoomLayoutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomLayout
+        fields = '__all__'
+
+class ChatLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatLog
+        fields = '__all__'
+
+class CostMetricSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CostMetric
+        fields = '__all__'
+
 class MaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Material
@@ -37,3 +52,4 @@ class LaborRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LaborRate
         fields = '__all__'
+
