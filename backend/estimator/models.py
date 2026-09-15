@@ -1,95 +1,103 @@
 from django.db import models
 
-class Material(models.Model):
+class Service(models.Model):
     CATEGORY_CHOICES = [
-        ('STRUCTURAL', 'Structural & Concrete'),
-        ('METALS', 'Steel & Metals'),
-        ('LUMBER', 'Timber & Framing'),
-        ('GLASS', 'Glass & Windows'),
-        ('ROOFING', 'Roofing Materials'),
-        ('FINISHES', 'Wall & Flooring Finishes'),
-        ('ENERGY', 'Solar & Eco Energy'),
+        ('TURNKEY', 'Turnkey Home Construction'),
+        ('PLANNING', 'Architectural Planning & 3D Design'),
+        ('STRUCTURAL', 'Structural Engineering & Detailing'),
+        ('INTERIOR', 'Interior Architecture & Finishing'),
+        ('RENOVATION', 'Full Home Renovation & Remodeling'),
     ]
 
-    name = models.CharField(max_length=100)
-    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default='STRUCTURAL')
-    unit = models.CharField(max_length=20, help_text="e.g. cu yd, ton, sq ft, sheet, unit")
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-    region = models.CharField(max_length=50, default='National Average')
-    grade_multiplier = models.FloatField(default=1.0, help_text="Multiplier for standard (1.0), premium (1.3), luxury (1.8)")
-    volatility_index = models.FloatField(default=0.05, help_text="Monthly percentage price volatility range (+/-)")
-    last_updated = models.DateTimeField(auto_now=True)
+    title = models.CharField(max_length=150)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default='TURNKEY')
+    tagline = models.CharField(max_length=255)
+    description = models.TextField()
+    starting_price_inr = models.DecimalField(max_digits=12, decimal_places=2, default=1750.00)
+    unit = models.CharField(max_length=50, default='per sq ft')
+    features = models.JSONField(default=list, help_text="List of bullet features")
+    icon = models.CharField(max_length=50, default='Building2')
+    image = models.URLField(max_length=500, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} (${self.unit_price}/{self.unit})"
+        return self.title
+
+
+class Project(models.Model):
+    title = models.CharField(max_length=200)
+    category = models.CharField(max_length=100, default='Turnkey Construction')
+    location = models.CharField(max_length=150, default='Mumbai, India')
+    sqft = models.IntegerField(default=2400)
+    duration_months = models.IntegerField(default=8)
+    completed_year = models.IntegerField(default=2026)
+    estimated_cost_inr = models.DecimalField(max_digits=14, decimal_places=2, default=7500000.00)
+    
+    before_image = models.URLField(max_length=500)
+    after_image = models.URLField(max_length=500)
+    gallery_images = models.JSONField(default=list)
+    description = models.TextField()
+    is_featured = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.location})"
+
+
+class FloorPlan(models.Model):
+    title = models.CharField(max_length=150)
+    bhk_type = models.CharField(max_length=20, default='3 BHK')
+    sqft = models.IntegerField(default=2000)
+    floors = models.IntegerField(default=2)
+    blueprint_2d = models.URLField(max_length=500, blank=True, null=True)
+    render_3d = models.URLField(max_length=500, blank=True, null=True)
+    room_hotspots = models.JSONField(default=list, help_text="Hotspot room specs JSON")
+
+    def __str__(self):
+        return f"{self.title} - {self.sqft} sq ft ({self.bhk_type})"
+
+
+class ChatbotSession(models.Model):
+    session_id = models.CharField(max_length=100, unique=True)
+    user_name = models.CharField(max_length=100, blank=True, null=True)
+    user_phone = models.CharField(max_length=20, blank=True, null=True)
+    requested_site_visit = models.BooleanField(default=False)
+    inquired_sqft = models.IntegerField(default=2200)
+    inquired_budget_inr = models.DecimalField(max_digits=14, decimal_places=2, default=0.00)
+    city_region = models.CharField(max_length=100, default='Mumbai MMR')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Session {self.session_id} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+
+
+class ChatMessage(models.Model):
+    session = models.ForeignKey(ChatbotSession, related_name='messages', on_delete=models.CASCADE)
+    sender = models.CharField(max_length=10, choices=[('user', 'User'), ('bot', 'Bot')])
+    message = models.TextField()
+    calculation_snapshot = models.JSONField(default=dict, blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender}: {self.message[:40]}"
+
+
+class Material(models.Model):
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50, default='Structural')
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=30)
+    trend = models.CharField(max_length=20, default='0.0%')
+    brand = models.CharField(max_length=50, default='Generic')
+
+    def __str__(self):
+        return self.name
 
 
 class LaborRate(models.Model):
-    TRADE_CHOICES = [
-        ('GENERAL', 'General Contractor'),
-        ('MASON', 'Masonry & Concrete'),
-        ('FRAMER', 'Framing Carpenter'),
-        ('ROOFER', 'Roofing Specialist'),
-        ('ELECTRICIAN', 'Electrician'),
-        ('PLUMBER', 'Plumber'),
-        ('FINISHER', 'Drywall & Paint Specialist'),
-    ]
-
-    trade = models.CharField(max_length=30, choices=TRADE_CHOICES)
-    region = models.CharField(max_length=50, default='National Average')
+    trade = models.CharField(max_length=100)
     hourly_rate = models.DecimalField(max_digits=8, decimal_places=2)
-    sqft_rate = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
-    last_updated = models.DateTimeField(auto_now=True)
+    sqft_rate = models.DecimalField(max_digits=8, decimal_places=2)
+    region = models.CharField(max_length=100, default='Mumbai MMR')
 
     def __str__(self):
-        return f"{self.get_trade_display()} - {self.region} (${self.hourly_rate}/hr)"
-
-
-class ProjectConfiguration(models.Model):
-    STYLE_CHOICES = [
-        ('MODERN', 'Modern Glass Villa'),
-        ('COLONIAL', 'Colonial Brick Estate'),
-        ('MINIMALIST', 'Minimalist Concrete Cube'),
-        ('NORDIC', 'Nordic Timber Cabin'),
-        ('FUTURISTIC', 'Futuristic Smart Home'),
-    ]
-
-    ROOF_CHOICES = [
-        ('FLAT', 'Flat Terrace Roof'),
-        ('GABLED', 'Classic Gabled Roof'),
-        ('HIP', 'Hipped Roof'),
-        ('SLANTED', 'Modern Slanted Mono-pitch'),
-    ]
-
-    FINISH_GRADE_CHOICES = [
-        ('STANDARD', 'Standard Builders Grade'),
-        ('PREMIUM', 'Premium Architectural Grade'),
-        ('LUXURY', 'Ultra-Luxury Custom Grade'),
-    ]
-
-    name = models.CharField(max_length=150, default='Custom House Design')
-    sqft = models.IntegerField(default=2200)
-    floors = models.IntegerField(default=2)
-    style = models.CharField(max_length=30, choices=STYLE_CHOICES, default='MODERN')
-    roof_type = models.CharField(max_length=30, choices=ROOF_CHOICES, default='FLAT')
-    finish_grade = models.CharField(max_length=30, choices=FINISH_GRADE_CHOICES, default='PREMIUM')
-    region = models.CharField(max_length=50, default='North America East')
-    wall_color = models.CharField(max_length=20, default='#38bdf8')
-    estimated_material_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    estimated_labor_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    total_estimated_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.sqft} sq ft (${self.total_estimated_cost:,.2f})"
-
-
-class EstimationHistory(models.Model):
-    session_id = models.CharField(max_length=100, blank=True, null=True)
-    user_prompt = models.TextField()
-    ai_response = models.TextField()
-    calculated_breakdown = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Query at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+        return self.trade

@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Navbar } from './components/Navbar';
+import { HeroSection } from './components/HeroSection';
+import { ServicesCatalog } from './components/ServicesCatalog';
+import { ProjectSlider } from './components/ProjectSlider';
 import { HouseVisualizer } from './components/HouseVisualizer';
 import { HouseControls } from './components/HouseControls';
 import { CostBreakdownCard } from './components/CostBreakdownCard';
 import { FloorPlanViewer } from './components/FloorPlanViewer';
-import { ProjectCarousel } from './components/ProjectCarousel';
+import { ChatbotDrawer } from './components/ChatbotDrawer';
+import { AdminDashboard } from './components/AdminDashboard';
 import { MaterialMarketplace } from './components/MaterialMarketplace';
-import { EstimatorChat } from './components/EstimatorChat';
-import { useEstimatorSocket } from './hooks/useEstimatorSocket';
 import { staggerContainer, fadeInUp } from './utils/animations';
 
 export default function App() {
@@ -24,12 +26,13 @@ export default function App() {
 
   const [calculation, setCalculation] = useState(null);
   const [isCalcLoading, setIsCalcLoading] = useState(true);
-  const [templates, setTemplates] = useState([]);
-  const [activeTab, setActiveTab] = useState('visualizer');
+  const [services, setServices] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [floorplans, setFloorplans] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const { messages, sendMessage, isConnected, isTyping } = useEstimatorSocket(houseConfig);
-
+  // Fetch Pricing Calculation
   const fetchCalculation = useCallback(async (configToUse) => {
     setIsCalcLoading(true);
     try {
@@ -50,10 +53,10 @@ export default function App() {
         const data = await response.json();
         setCalculation(data);
       } else {
-        throw new Error('API server starting');
+        throw new Error('API server fallback');
       }
     } catch (error) {
-      // Local calculation fallback in Indian Rupees
+      // Local calculation engine fallback
       const sqft = configToUse.sqft;
       const floors = configToUse.floors;
       const rateInr = configToUse.finishGrade === 'LUXURY' ? 3850 : configToUse.finishGrade === 'PREMIUM' ? 2650 : 1750;
@@ -109,68 +112,30 @@ export default function App() {
     }
   }, []);
 
+  // Initial Data Load
   useEffect(() => {
     fetchCalculation(houseConfig);
 
+    // Services API
+    fetch('http://127.0.0.1:8000/api/v1/services/')
+      .then((res) => (res.ok ? res.json() : Promise.reject('Fallback')))
+      .then((data) => setServices(data))
+      .catch(() => {
+        setServices([
+          { id: 1, title: "Turnkey Home Construction", category: "TURNKEY", tagline: "End-to-End Build", description: "Complete architectural build from soil excavation to occupancy.", starting_price_inr: 1750.00, icon: "Building2", features: ["10-Year Warranty", "Tata Steel & UltraTech Cement", "Engineer Supervision"] },
+          { id: 2, title: "Architectural Planning & 3D Design", category: "PLANNING", tagline: "Vastu Compliant Blueprints", description: "Architectural layout blueprints, 3D exterior elevations, structural load calculations.", starting_price_inr: 45.00, icon: "Compass", features: ["100% Vastu Shastra Plans", "High-Res 3D Renders", "Sanction Approvals"] },
+          { id: 3, title: "Structural Engineering & Detailing", category: "STRUCTURAL", tagline: "Earthquake Resistant Design", description: "Earthquake-resistant structural engineering, RCC column & beam detailing.", starting_price_inr: 25.00, icon: "ShieldCheck", features: ["IS 1893 Seismic Analysis", "Steel Quantity Optimization", "Certified Engineer Audit"] }
+        ]);
+      });
+
+    // Projects API
     fetch('http://127.0.0.1:8000/api/v1/projects/')
       .then((res) => (res.ok ? res.json() : Promise.reject('Fallback')))
-      .then((data) => setTemplates(data))
+      .then((data) => setProjects(data))
       .catch(() => {
-        setTemplates([
-          {
-            id: "blueprint-1",
-            title: "Aura Glass Villa",
-            subtitle: "3 BHK Ultra-Modern Residence",
-            style: "MODERN",
-            roof_type: "FLAT",
-            sqft: 2800,
-            floors: 2,
-            finish_grade: "LUXURY",
-            wall_color: "#d97706",
-            estimated_price: "₹ 1.15 Cr",
-            bedrooms: 3,
-            bathrooms: 4,
-            garage: "2 Cars",
-            image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-            badge: "Popular",
-            description: "Floor-to-ceiling glass panels, cantilevered master terrace, open modular kitchen hall."
-          },
-          {
-            id: "blueprint-2",
-            title: "Neo-Colonial Brick Estate",
-            subtitle: "4 BHK Classical Brick Heritage",
-            style: "COLONIAL",
-            roof_type: "HIP",
-            sqft: 3600,
-            floors: 2,
-            finish_grade: "PREMIUM",
-            wall_color: "#b91c1c",
-            estimated_price: "₹ 1.45 Cr",
-            bedrooms: 4,
-            bathrooms: 5,
-            garage: "2 Cars",
-            image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-            badge: "Heritage",
-            description: "Exposed clay brick masonry, hipped roof design, double-height living foyer with teak millwork."
-          },
-          {
-            id: "blueprint-3",
-            title: "Monolith Eco Residence",
-            subtitle: "2 BHK Minimalist Low-Carbon Home",
-            style: "MINIMALIST",
-            roof_type: "FLAT",
-            sqft: 1600,
-            floors: 2,
-            finish_grade: "STANDARD",
-            wall_color: "#64748b",
-            estimated_price: "₹ 48.5 Lakhs",
-            bedrooms: 2,
-            bathrooms: 2.5,
-            garage: "1 Car",
-            image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
-            badge: "Value Smart",
-            description: "Board-formed architectural concrete, energy efficient thermal insulation, zero-maintenance exterior."
-          }
+        setProjects([
+          { id: 1, title: "Aura Horizon Glass Villa", category: "Turnkey Construction", location: "Juhu, Mumbai", sqft: 3400, duration_months: 9, estimated_cost_inr: "₹ 1.25 Cr", before_image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80", after_image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80", description: "Floor-to-ceiling glass curtain walls and cantilever terrace patio." },
+          { id: 2, title: "Neo-Colonial Brick Estate", category: "Heritage Build", location: "Gurgaon, Delhi NCR", sqft: 4200, duration_months: 11, estimated_cost_inr: "₹ 1.65 Cr", before_image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80", after_image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80", description: "Exposed Wire-Cut Clay Brickwork, classical slate hipped roof." }
         ]);
       });
   }, []);
@@ -180,25 +145,10 @@ export default function App() {
     fetchCalculation(newConfig);
   };
 
-  const handleSelectTemplate = (template) => {
-    const updated = {
-      ...houseConfig,
-      sqft: template.sqft,
-      floors: template.floors,
-      style: template.style,
-      roofType: template.roof_type,
-      finishGrade: template.finish_grade,
-      wallColor: template.wall_color,
-    };
-    setHouseConfig(updated);
-    fetchCalculation(updated);
-    setActiveTab('visualizer');
-  };
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
-      {/* Navbar */}
+      {/* Top Navigation */}
       <Navbar
         onToggleChat={() => setIsChatOpen((prev) => !prev)}
         isChatOpen={isChatOpen}
@@ -206,47 +156,57 @@ export default function App() {
         setActiveTab={setActiveTab}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-8">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-12">
         
-        {/* TAB 1: 3D Visualizer Studio & Dynamic Controls */}
+        {/* OVERVIEW PAGE (HERO + SERVICES + PROJECTS) */}
+        {activeTab === 'overview' && (
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-12">
+            <HeroSection
+              onCalculateClick={() => setActiveTab('visualizer')}
+              onViewProjectsClick={() => setActiveTab('projects')}
+            />
+            <ServicesCatalog services={services} onSelectService={() => setIsChatOpen(true)} />
+            <ProjectSlider projects={projects} onSelectProject={() => setActiveTab('visualizer')} />
+          </motion.div>
+        )}
+
+        {/* SERVICES TAB */}
+        {activeTab === 'services' && (
+          <motion.div variants={fadeInUp} initial="hidden" animate="show">
+            <ServicesCatalog services={services} onSelectService={() => setIsChatOpen(true)} />
+          </motion.div>
+        )}
+
+        {/* PROJECTS TAB */}
+        {activeTab === 'projects' && (
+          <motion.div variants={fadeInUp} initial="hidden" animate="show">
+            <ProjectSlider projects={projects} onSelectProject={() => setActiveTab('visualizer')} />
+          </motion.div>
+        )}
+
+        {/* 3D STUDIO TAB */}
         {activeTab === 'visualizer' && (
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            animate="show"
-            className="space-y-8"
-          >
+          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* Left 3D Viewport (7 Cols) */}
               <div className="lg:col-span-7 w-full">
                 <HouseVisualizer config={houseConfig} />
               </div>
-
-              {/* Right Cost Breakdown (5 Cols) */}
               <div className="lg:col-span-5 w-full">
                 <CostBreakdownCard calculation={calculation} isLoading={isCalcLoading} />
               </div>
             </div>
-
-            {/* Architectural Controls */}
             <HouseControls config={houseConfig} onChange={handleConfigChange} />
-
-            {/* Floor Plan Strip */}
             <FloorPlanViewer
               rooms={calculation?.floor_plan_rooms}
               sqft={houseConfig.sqft}
               floors={houseConfig.floors}
               bhkLabel={calculation?.bhk_label || "3 BHK"}
             />
-
-            {/* Blueprints Carousel */}
-            <ProjectCarousel templates={templates} onSelectTemplate={handleSelectTemplate} />
           </motion.div>
         )}
 
-        {/* TAB 2: Floor Plan */}
+        {/* FLOOR PLAN TAB */}
         {activeTab === 'floorplan' && (
           <motion.div variants={fadeInUp} initial="hidden" animate="show">
             <FloorPlanViewer
@@ -258,14 +218,14 @@ export default function App() {
           </motion.div>
         )}
 
-        {/* TAB 3: Blueprints */}
-        {activeTab === 'blueprints' && (
+        {/* ADMIN PORTAL TAB */}
+        {activeTab === 'analytics' && (
           <motion.div variants={fadeInUp} initial="hidden" animate="show">
-            <ProjectCarousel templates={templates} onSelectTemplate={handleSelectTemplate} />
+            <AdminDashboard />
           </motion.div>
         )}
 
-        {/* TAB 4: Market Rates */}
+        {/* MARKETPLACE TAB */}
         {activeTab === 'marketplace' && (
           <motion.div variants={fadeInUp} initial="hidden" animate="show">
             <MaterialMarketplace />
@@ -274,19 +234,16 @@ export default function App() {
 
       </main>
 
-      {/* AI Estimator Floating Chatbot Drawer */}
-      <EstimatorChat
+      {/* Groq AI Chatbot Floating Drawer */}
+      <ChatbotDrawer
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
-        messages={messages}
-        onSendMessage={sendMessage}
-        isConnected={isConnected}
-        isTyping={isTyping}
+        currentConfig={houseConfig}
       />
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
-        <p>ConstructAI Pro • Luxury 3D House Builder & Smart Cost Estimator</p>
+        <p>ConstructAI Pro • Modern Construction Services & Groq AI Architecture Platform</p>
       </footer>
     </div>
   );
