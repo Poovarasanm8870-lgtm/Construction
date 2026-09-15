@@ -63,8 +63,20 @@ export default function App() {
             <HouseBlueprints onInquireBlueprint={handleSelectBlueprintForQuote} />
 
             <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
+
+            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+              <div className="text-center max-w-2xl mx-auto mb-8">
+                <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200/80">
+                  Instant Structural Advisor
+                </span>
+                <h2 className="text-3xl font-extrabold text-slate-900 mt-2">Groq AI Construction Advisor</h2>
+                <p className="text-slate-600 text-sm mt-1">Get precise Indian civil estimates, material counts & labor rates</p>
+              </div>
+              <AIAdvisorChat initialPrompt={chatInitialPrompt} onSiteVisitBooked={() => setIsChatOpen(true)} />
+            </div>
           </motion.div>
         )}
+
 
 
         {/* TAB 2: 5 CORE SERVICES */}

@@ -5,88 +5,14 @@ import {
   Send, 
   User, 
   Sparkles, 
+  PhoneCall, 
   CheckCircle2, 
   RefreshCw,
-  ShieldCheck,
-  Building,
-  Check,
-  Info
+  Calculator,
+  MessageSquare,
+  ShieldCheck
 } from 'lucide-react';
 import { bouncyTap, springTransition } from '../animations/iosSprings';
-
-/**
- * Clean & Spacious AI Message Component
- * Renders bot messages with elegant spacing, soft cards, and crisp typography.
- */
-function FormattedAIMessage({ text }) {
-  if (!text) return null;
-
-  // Split lines into clean sections
-  const paragraphs = text.split('\n\n');
-
-  return (
-    <div className="space-y-4 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans">
-      {paragraphs.map((para, pIdx) => {
-        const trimmed = para.trim();
-        if (!trimmed) return null;
-
-        // Check if paragraph is a bullet list section
-        if (trimmed.includes('•') || trimmed.includes('- ')) {
-          const lines = trimmed.split('\n');
-          const titleLine = lines.find(l => !l.trim().startsWith('•') && !l.trim().startsWith('-'));
-          const bulletLines = lines.filter(l => l.trim().startsWith('•') || l.trim().startsWith('-'));
-
-          return (
-            <div key={pIdx} className="space-y-2.5 my-2">
-              {titleLine && (
-                <div className="font-extrabold text-slate-900 text-sm tracking-tight border-b border-slate-200/80 pb-1 flex items-center gap-1.5">
-                  <span>{titleLine.replace(/\*\*/g, '')}</span>
-                </div>
-              )}
-              <div className="space-y-2 pl-1">
-                {bulletLines.map((line, bIdx) => {
-                  const cleaned = line.replace(/^[•\-]\s*/, '').replace(/\*\*/g, '');
-                  return (
-                    <div key={bIdx} className="flex items-start gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span className="text-slate-800 font-medium leading-snug">{cleaned}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        }
-
-        // Check if header or title
-        if (trimmed.startsWith('🏠') || trimmed.startsWith('💰') || trimmed.startsWith('📦') || trimmed.startsWith('🛠️') || trimmed.startsWith('🚿') || trimmed.startsWith('⚡')) {
-          return (
-            <div key={pIdx} className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-slate-900 font-extrabold text-sm sm:text-base flex items-center gap-2">
-              <span>{trimmed.replace(/\*\*/g, '')}</span>
-            </div>
-          );
-        }
-
-        // Check if disclaimer
-        if (trimmed.startsWith('📌') || trimmed.toLowerCase().includes('note:')) {
-          return (
-            <div key={pIdx} className="p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 font-medium flex items-center gap-2">
-              <Info className="w-4 h-4 text-slate-500 flex-shrink-0" />
-              <span>{trimmed.replace(/\*\*/g, '').replace(/^📌\s*/, '')}</span>
-            </div>
-          );
-        }
-
-        // Standard Paragraph
-        return (
-          <p key={pIdx} className="text-slate-800 font-medium leading-relaxed">
-            {trimmed.replace(/\*\*/g, '')}
-          </p>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked }) {
   const [messages, setMessages] = useState([
@@ -162,41 +88,35 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
         }
       ]);
     } catch (err) {
-      // Deterministic Offline Fallback Response with spacious, neat formatting
-      let botReply = `🏠 ConstructAI Construction Estimate (1,500 Sq Ft Project)\n\n` +
-        `Estimated total budget for a 1,500 sq ft house (G+1, 3 BHK Villa) in Mumbai MMR is ₹ 48.5 Lakhs (approx. ₹ 1,850/sq ft).\n\n` +
-        `💰 Itemized Cost Breakdown:\n` +
-        `• Building Materials (55%): ₹ 26.67 Lakhs\n` +
-        `• Skilled Labour & Masonry (30%): ₹ 14.55 Lakhs\n` +
-        `• Approvals & Reserve Buffer (15%): ₹ 7.28 Lakhs\n` +
-        `• Grand Total: ₹ 48.5 Lakhs\n\n` +
-        `📦 Key Material Quantities Required:\n` +
-        `• Cement (50kg bags): 600 Bags (UltraTech/ACC)\n` +
-        `• TMT Steel Rebar: 5.25 Tons (Tata Tiscon Fe-550D)\n` +
-        `• AAC Masonry Blocks: 27,000 Pcs\n` +
-        `• Flooring Vitrified Tiles: 2,250 Sq Ft\n\n` +
-        `📌 Note: Final quotation is subject to site soil inspection and approved architectural plan.`;
+      // Deterministic Offline Fallback Response with zero backend jargon
+      let botReply = `🏠 **ConstructAI Construction Estimate**\n\n` +
+        `Estimated budget for **1,500 sq ft** (G+1, 3 BHK Villa) is **₹ 48.5 Lakhs** (approx. **₹ 1,850/sq ft**).\n\n` +
+        `**Itemized Cost & Labour Breakdown:**\n` +
+        `• **Building Materials (55%):** ₹ 26.67 Lakhs\n` +
+        `• **Skilled Labour & Masonry (30%):** ₹ 14.55 Lakhs\n` +
+        `• **Approvals & Reserve Buffer (15%):** ₹ 7.28 Lakhs\n\n` +
+        `📦 **Key Materials:** Cement: 600 Bags | Steel: 5.25 Tons | AAC Blocks: 27,000 Pcs\n\n` +
+        `📌 *Note: Final quotation is subject to site soil inspection.*`;
 
       if (textToSend.toLowerCase().includes('plumbing')) {
-        botReply = `🚿 Professional Plumbing Rates & Services:\n\n` +
-          `• Concealed Water & Drainage Lines: ₹ 180 / sq ft\n` +
-          `• Jaquar / Kohler Fixture Installation: Included in Turnkey Package\n` +
-          `• Terrace Overhead Tank Piping: Hydro-tested zero leakage guarantee.`;
+        botReply = `🚿 **Professional Plumbing Rates & Services:**\n\n` +
+          `• **Concealed Water & Drainage Lines:** ₹ 180 / sq ft\n` +
+          `• **Jaquar/Kohler Fixture Installation:** Included in Turnkey package\n` +
+          `• **Terrace Overhead Tank Piping:** Pressure tested with zero leakage guarantee.`;
       } else if (textToSend.toLowerCase().includes('electrical') || textToSend.toLowerCase().includes('wiring')) {
-        botReply = `⚡ Electrical & Wiring Services:\n\n` +
-          `• Concealed Copper Wiring: ₹ 160 / sq ft (Polycab Flame-Retardant FR Wires)\n` +
-          `• Schneider / Havells Modular Switches: Included in Turnkey Package\n` +
-          `• Three-Phase Main Panel Setup: Installed by Certified Electrician.`;
+        botReply = `⚡ **Electrical & Wiring Services:**\n\n` +
+          `• **Concealed Copper Wiring:** ₹ 160 / sq ft (Polycab FR Wires)\n` +
+          `• **Schneider/Havells Switches:** Included\n` +
+          `• **Three-Phase Distribution Board:** Certified electrician installation.`;
       } else if (textToSend.toLowerCase().includes('services')) {
-        botReply = `🛠️ Our 5 Core Turn-Key Services:\n\n` +
-          `• Full-Scale Construction (Turnkey Residential & Commercial Builds)\n` +
-          `• Professional Plumbing (Hydro-tested CPVC & UPVC Piping)\n` +
-          `• Electrical & Wiring (Safe Code-Compliant Copper Power Wiring)\n` +
-          `• Interior Design & Finishing (Italian Marble & Modular Kitchens)\n` +
-          `• Roofing & Structural Renovation (Polymer Terrace Waterproofing)`;
+        botReply = `🛠️ **Our 5 Core Services:**\n\n` +
+          `1. **Full-Scale Construction** (Turnkey Residential & Commercial)\n` +
+          `2. **Professional Plumbing** (Hydro-tested CPVC/UPVC)\n` +
+          `3. **Electrical & Wiring** (Polycab Flame-Retardant Wiring)\n` +
+          `4. **Interior Design & Finishing** (Italian Marble & Modular Kitchens)\n` +
+          `5. **Roofing & Structural Renovation** (Dr. Fixit Polymer Waterproofing)`;
       } else if (textToSend.toLowerCase().includes('visit') || textToSend.toLowerCase().includes('book')) {
-        botReply = `📅 Free Site Visit & Consultation Scheduled!\n\n` +
-          `Our Chief Structural Engineer will contact you within 2 hours to confirm your on-site soil inspection and architectural drawing consultation.`;
+        botReply = `📅 **Site Visit Scheduled!**\n\nOur Chief Structural Engineer will contact you within 2 hours to confirm your free on-site soil and architectural consultation.`;
         if (onSiteVisitBooked) onSiteVisitBooked();
       }
 
@@ -214,7 +134,7 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
   };
 
   return (
-    <div className="w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col h-[680px] max-w-4xl mx-auto">
+    <div className="w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col h-[650px] max-w-4xl mx-auto">
       {/* Header */}
       <div className="bg-slate-900 text-white p-5 flex items-center justify-between border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -236,12 +156,12 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
 
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Spacious AI Formatting</span>
+          <span>Verified Formulas</span>
         </div>
       </div>
 
       {/* Messages Stream Feed */}
-      <div className="flex-1 p-5 sm:p-6 overflow-y-auto space-y-6 bg-slate-50/60">
+      <div className="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/60">
         {messages.map((msg, index) => (
           <motion.div
             key={index}
@@ -251,27 +171,25 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
             className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.sender === 'bot' && (
-              <div className="w-9 h-9 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center flex-shrink-0 shadow-md mt-1">
-                <Bot className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center flex-shrink-0 shadow-sm mt-1">
+                <Bot className="w-4 h-4" />
               </div>
             )}
 
-            <div className={`max-w-[88%] rounded-3xl p-5 sm:p-6 shadow-sm ${
+            <div className={`max-w-[85%] rounded-2xl p-4 shadow-sm text-xs sm:text-sm leading-relaxed ${
               msg.sender === 'user'
-                ? 'bg-slate-900 text-white rounded-br-none text-xs sm:text-sm font-medium'
-                : 'bg-white text-slate-900 border border-slate-200/90 rounded-bl-none shadow-md'
+                ? 'bg-slate-900 text-white rounded-br-none'
+                : 'bg-white text-slate-900 border border-slate-200/80 rounded-bl-none'
             }`}>
-              {msg.sender === 'user' ? (
-                <div className="font-medium text-white">{msg.text}</div>
-              ) : (
-                <FormattedAIMessage text={msg.text} />
-              )}
+              <div className="whitespace-pre-wrap font-sans">
+                {msg.text}
+              </div>
 
               {msg.sender === 'bot' && (
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-semibold">
+                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-medium">
                   <span>Engine: {msg.model || "Groq Civil Advisor"}</span>
-                  <span className="text-emerald-700 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                     Verified Rates
                   </span>
                 </div>
@@ -279,8 +197,8 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
             </div>
 
             {msg.sender === 'user' && (
-              <div className="w-9 h-9 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center flex-shrink-0 shadow-md mt-1 font-bold text-xs">
-                <User className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center flex-shrink-0 shadow-sm mt-1 font-bold text-xs">
+                <User className="w-4 h-4" />
               </div>
             )}
           </motion.div>
@@ -288,12 +206,12 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
 
         {loading && (
           <div className="flex gap-3 justify-start">
-            <div className="w-9 h-9 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center flex-shrink-0">
-              <Bot className="w-5 h-5 animate-bounce" />
+            <div className="w-8 h-8 rounded-2xl bg-slate-900 text-amber-400 flex items-center justify-center flex-shrink-0">
+              <Bot className="w-4 h-4 animate-bounce" />
             </div>
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 text-xs font-semibold text-slate-600 flex items-center gap-2 shadow-md">
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 text-xs font-semibold text-slate-600 flex items-center gap-2 shadow-sm">
               <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
-              <span>Formatting clean, spacious structural estimate...</span>
+              <span>Calculating material breakdowns & rates...</span>
             </div>
           </div>
         )}
@@ -301,7 +219,7 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
       </div>
 
       {/* STICKY SUGGESTION CHIPS DIRECTLY ABOVE THE INPUT BAR */}
-      <div className="bg-slate-100/90 border-t border-b border-slate-200/80 p-3 px-4 overflow-x-auto flex gap-2 flex-shrink-0 backdrop-blur-md">
+      <div className="bg-slate-100/90 border-t border-b border-slate-200/80 p-2.5 px-4 overflow-x-auto flex gap-2 flex-shrink-0 backdrop-blur-md">
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1 flex-shrink-0 mr-1">
           <Sparkles className="w-3 h-3 text-amber-600" />
           Suggestions:
@@ -311,7 +229,7 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
             key={idx}
             whileTap={bouncyTap}
             onClick={() => handleSendMessage(chip)}
-            className="px-3.5 py-1.5 rounded-xl bg-white border border-slate-200/90 text-slate-700 text-xs font-semibold hover:border-slate-900 hover:text-slate-900 hover:shadow transition-all flex-shrink-0 shadow-sm"
+            className="px-3 py-1.5 rounded-xl bg-white border border-slate-200/90 text-slate-700 text-xs font-semibold hover:border-slate-900 hover:text-slate-900 hover:shadow transition-all flex-shrink-0"
           >
             ⚡ {chip}
           </motion.button>

@@ -38,23 +38,20 @@ def query_groq_ai_estimator(user_prompt, current_config=None):
             
             system_prompt = (
                 "You are ConstructAI's Chief Civil Structural Engineer & Construction Estimator in India.\n"
-                "Provide an accurate, spacious, and beautifully formatted construction cost estimate in Indian Rupees (₹) "
+                "Provide an accurate, itemized, and realistic construction cost estimate in Indian Rupees (₹) "
                 "using Lakhs/Crores formatting based on Indian civil engineering standards.\n\n"
-                "CRITICAL FORMATTING INSTRUCTIONS:\n"
-                "- Write with GENEROUS line breaks and wide section spacing.\n"
-                "- Never produce dense or congested walls of text.\n"
-                "- Use clear numbered headings and concise, spacious bullet points.\n\n"
                 "Reference House Context:\n"
                 f"• Built-Up Footprint: {sqft:,} sq ft ({calc['bhk_label']}, {floors} Floors)\n"
                 f"• Style: {style}, Region: {region}, Grade: {finish_grade}\n"
                 f"• Estimated Total Budget: {summary['formatted_grand_total']} (Rate: ₹ {summary['rate_per_sqft_inr']:,}/sq ft)\n"
-                f"• Materials Required: Cement: {materials['cement_bags']:,} bags (50kg), Steel: {materials['steel_tons']} Tons, "
+                f"• Materials Required: Cement: {materials['cement_bags']:,} bags (50kg), Steel: {materials['steel_tons']} Tons (Tata/JSW), "
                 f"Bricks: {materials['bricks_count']:,} Units, Tiles: {materials['tiles_sqft']:,} sq ft.\n\n"
-                "Format your response with clean spacing:\n"
-                "1. 🏠 Project Overview & Total Estimated Budget\n\n"
-                "2. 💰 Itemized Cost Breakdown (Materials, Labour & Buffer)\n\n"
-                "3. 📦 Key Civil Engineering Materials Required\n\n"
-                "4. 📌 Short Disclaimer regarding site soil inspection."
+                "Format your response cleanly with:\n"
+                "1. Project Summary & Total Estimated Budget in ₹\n"
+                "2. Itemized Material & Labour Charges Breakdown\n"
+                "3. Approvals & 10% Reserve Buffer\n"
+                "4. A clear disclaimer: 'Note: Final quotation is subject to site soil inspection and detailed structural drawing approval.'\n"
+                "Keep tone warm, professional, encouraging site visit bookings."
             )
 
             completion = client.chat.completions.create(
@@ -80,18 +77,18 @@ def query_groq_ai_estimator(user_prompt, current_config=None):
     # Fallback Deterministic Response
     ai_text = (
         f"🏠 **ConstructAI Turn-Key Construction Estimate**\n\n"
-        f"Estimated total budget for a **{sqft:,} sq ft** project ({calc['bhk_label']}, {floors} Floors) in **{region}** is **{summary['formatted_grand_total']}** (approx. **₹ {summary['rate_per_sqft_inr']:,}/sq ft**).\n\n"
-        f"**💰 Itemized Cost Breakdown:**\n"
-        f"• **Building Materials (55%):** ₹ {summary['total_material_cost_inr']:,}\n"
-        f"• **Skilled Labour & Masonry (30%):** ₹ {summary['total_labor_cost_inr']:,}\n"
-        f"• **Approvals & Reserve Buffer (15%):** ₹ {summary['contingency_inr']:,}\n"
+        f"Estimated total budget for a **{sqft:,} sq ft** ({calc['bhk_label']}, {floors}-story, {finish_grade.title()} grade) project in **{region}** is **{summary['formatted_grand_total']}** (approx. **₹ {summary['rate_per_sqft_inr']:,}/sq ft**).\n\n"
+        f"**Itemized Breakdown (in Indian Rupees ₹):**\n"
+        f"• **Building Materials:** ₹ {summary['total_material_cost_inr']:,}\n"
+        f"• **Skilled Labour & Masonry:** ₹ {summary['total_labor_cost_inr']:,}\n"
+        f"• **Approvals, Architect & Reserve (10%):** ₹ {summary['contingency_inr']:,}\n"
         f"• **Grand Total:** **{summary['formatted_grand_total']}**\n\n"
-        f"**📦 Required Material Quantities:**\n"
+        f"📦 **Required Key Material Quantities:**\n"
         f"• Cement (50kg bags): **{materials['cement_bags']:,} Bags**\n"
         f"• TMT Steel Rebar: **{materials['steel_tons']} Tons**\n"
-        f"• AAC Masonry Blocks: **{materials['bricks_count']:,} Pcs**\n"
-        f"• Flooring Tiles: **{materials['tiles_sqft']:,} Sq Ft**\n\n"
-        f"📌 *Note: Final quotation is subject to site soil inspection and approved architectural plan.*"
+        f"• Bricks / AAC Blocks: **{materials['bricks_count']:,} Pcs**\n"
+        f"• Flooring Tiles / Marble: **{materials['tiles_sqft']:,} Sq Ft**\n\n"
+        f"📌 *Note: Final quotes are subject to site soil inspection and detailed architectural drawings.*"
     )
 
     return {
@@ -99,4 +96,3 @@ def query_groq_ai_estimator(user_prompt, current_config=None):
         "calculation": calc,
         "model_used": "Civil Engine Fallback"
     }
-
