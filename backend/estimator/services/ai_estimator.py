@@ -1,10 +1,18 @@
+import os
 import re
 from .pricing_engine import calculate_construction_cost
 
+try:
+    from groq import Groq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+
 def process_ai_chat_query(prompt, current_config=None):
     """
-    Parses user queries, extracts house specs, runs the Indian Rupee calculation engine,
-    and returns a clean, consumer-friendly natural language response with Indian Rupees (₹).
+    Parses user queries, extracts parameters, runs the calculation engine,
+    and queries Groq AI (Llama 3 70B) for ultra-fast conversational answers
+    with fallback to local rule-based template.
     """
     prompt_lower = prompt.lower()
 
@@ -52,6 +60,7 @@ def process_ai_chat_query(prompt, current_config=None):
     elif current_config and 'finish_grade' in current_config:
         finish_grade = current_config['finish_grade']
 
+    # Compute Civil Engineering Calculations
     calc = calculate_construction_cost(
         sqft=sqft,
         floors=floors,
@@ -63,8 +72,54 @@ def process_ai_chat_query(prompt, current_config=None):
     summary = calc['summary']
     materials = calc['material_quantities']
 
+    # Check for Groq API Key
+    groq_api_key = os.environ.get('GROQ_API_KEY')
+
+    if GROQ_AVAILABLE and groq_api_key:
+        try:
+            client = Groq(api_key=groq_api_key)
+            system_context = (
+                "You are ConstructAI's senior civil engineer & construction cost estimator for India. "
+                "Answer the user query accurately in Indian Rupees (₹) using Lakhs/Crores formatting. "
+                "Use the following calculated context as reference:\n"
+                f"• Footprint: {sqft:,} sq ft ({calc['bhk_label']}, {floors} Floors)\n"
+                f"• Style: {style}, Region: {region}, Grade: {finish_grade}\n"
+                f"• Estimated Total Cost: {summary['formatted_grand_total']} (₹ {summary['rate_per_sqft_inr']:,}/sq ft)\n"
+                f"• Materials: Cement: {materials['cement_bags']:,} bags (50kg), Steel: {materials['steel_tons']} tons, "
+                f"Bricks: {materials['bricks_count']:,} units, Tiles: {materials['tiles_sqft']:,} sq ft.\n\n"
+                "Keep your response structured, bulleted, clear, and focused on practical Indian construction advice."
+            )
+
+            completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_context},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.4,
+                max_tokens=700
+            )
+
+            ai_text = completion.choices[0].message.content
+            return {
+                "text": ai_text,
+                "calculation": calc,
+                "parameters_used": {
+                    "sqft": sqft,
+                    "floors": floors,
+                    "style": style,
+                    "finish_grade": finish_grade,
+                    "region": region,
+                    "model_used": "Groq Llama 3 70B"
+                }
+            }
+        except Exception as e:
+            # Fallback to local engine if Groq call encounters error
+            pass
+
+    # Deterministic Engine Response (Fallback)
     ai_text = (
-        f"🏠 **ConstructAI Smart Estimate**\n\n"
+        f"🏠 **ConstructAI Smart Estimate Engine**\n\n"
         f"Estimated total construction cost for a **{sqft:,} sq ft** ({calc['bhk_label']}, {floors}-story, {finish_grade.title()} grade) home in **{region}** is **{summary['formatted_grand_total']}** (approx. **₹ {summary['rate_per_sqft_inr']:,}/sq ft**).\n\n"
         f"**Cost Breakdown (in Indian Rupees ₹):**\n"
         f"• **Building Materials:** ₹ {summary['total_material_cost_inr']:,}\n"
@@ -76,7 +131,7 @@ def process_ai_chat_query(prompt, current_config=None):
         f"• TMT Steel Rebar: **{materials['steel_tons']} Tons**\n"
         f"• Bricks/Blocks: **{materials['bricks_count']:,} Units**\n"
         f"• Flooring Tiles: **{materials['tiles_sqft']:,} Sq Ft**\n\n"
-        f"💡 *Tip: Adjust your house sliders or floor count to instantly recalculate these material quantities.*"
+        f"💡 *Tip: Configure `GROQ_API_KEY` in environment settings to enable real-time Llama 3 70B AI responses.*"
     )
 
     return {
@@ -87,6 +142,7 @@ def process_ai_chat_query(prompt, current_config=None):
             "floors": floors,
             "style": style,
             "finish_grade": finish_grade,
-            "region": region
+            "region": region,
+            "model_used": "Local Calculation Engine"
         }
     }
