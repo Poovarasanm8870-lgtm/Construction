@@ -84,34 +84,53 @@ export default function GroqChatEstimator({ initialSqft = 1500, onBookingTrigger
         }
       ]);
     } catch (err) {
-      // Deterministic Offline Fallback Response
-      const is1500 = textToSend.includes('1500') || sqftInput === 1500;
-      const fallbackText = is1500
-        ? `🏠 **ConstructAI Turn-Key Estimate (1,500 Sq Ft Project)**\n\n` +
-          `Estimated total budget for a **1,500 sq ft** house (G+1, 3 BHK) in **Mumbai MMR** is **₹ 48.5 Lakhs** (approx. **₹ 1,850/sq ft**).\n\n` +
-          `**Itemized Cost & Labour Breakdown:**\n` +
-          `• **Building Materials (55%):** ₹ 26.67 Lakhs\n` +
-          `• **Skilled Labour & Masonry (30%):** ₹ 14.55 Lakhs\n` +
-          `• **Structural Approvals & Buffer (15%):** ₹ 7.28 Lakhs\n\n` +
-          `📦 **Material Quantities Required:**\n` +
-          `• Cement (50kg bags): **600 Bags** (UltraTech/ACC)\n` +
-          `• TMT Steel Rebar: **5.25 Tons** (Tata Tiscon Fe-550D)\n` +
-          `• Bricks / AAC Blocks: **27,000 Pcs**\n` +
-          `• Flooring Tiles: **2,250 Sq Ft**\n\n` +
-          `📌 *Note: Final quotation subject to site soil inspection and approved architectural plan.*`
-        : `🏠 **ConstructAI Turn-Key Estimate (${sqftInput} Sq Ft Project)**\n\n` +
-          `Estimated total budget for **${sqftInput} sq ft** is **₹ ${(sqftInput * 1850).toLocaleString('en-IN')}** (approx. **₹ 1,850/sq ft**).\n\n` +
-          `**Itemized Breakdown:**\n` +
-          `• **Materials:** ₹ ${Math.round(sqftInput * 1850 * 0.55).toLocaleString('en-IN')}\n` +
-          `• **Labour:** ₹ ${Math.round(sqftInput * 1850 * 0.30).toLocaleString('en-IN')}\n` +
-          `• **Reserve:** ₹ ${Math.round(sqftInput * 1850 * 0.15).toLocaleString('en-IN')}`;
+      // Deterministic Offline Fallback Response with Dynamic Custom SqFt Parsing
+      const match = textToSend.match(/(\d[\d,]*)\s*(?:sq\s*ft|square\s*feet|sqft|sft|sq\s*feet|sq|ft2|square\s*ft|feet|ft)?/i);
+      const parsedSqft = match && parseInt(match[1].replace(/,/g, ''), 10) >= 100 
+        ? parseInt(match[1].replace(/,/g, ''), 10) 
+        : (parseInt(sqftInput, 10) || 1500);
+
+      const ratePerSqft = 1850;
+      const totalCost = parsedSqft * ratePerSqft;
+      const materialCost = Math.round(totalCost * 0.55);
+      const laborCost = Math.round(totalCost * 0.30);
+      const reserveCost = Math.round(totalCost * 0.15);
+
+      const cementBags = Math.round(parsedSqft * 0.4);
+      const steelTons = (parsedSqft * 0.0035).toFixed(2);
+      const bricks = Math.round(parsedSqft * 18);
+      const tiles = Math.round(parsedSqft * 1.5);
+
+      const formattedTotal = totalCost >= 10000000 
+        ? `₹ ${(totalCost / 10000000).toFixed(2)} Cr`
+        : `₹ ${(totalCost / 100000).toFixed(2)} Lakhs`;
+
+      const fallbackText = 
+        `<div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 20px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 20px;">\n` +
+        `  <div style="font-size: 11px; text-transform: uppercase; color: #fbbf24; font-weight: 700; tracking: 1px; margin-bottom: 8px;">🏗️ ConstructAI Dynamic Estimate</div>\n` +
+        `  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: left;">\n` +
+        `    <div><span style="font-size: 11px; color: #94a3b8;">Total Sq Ft:</span><br/><strong style="font-size: 16px; color: white;">${parsedSqft.toLocaleString()} sq ft</strong></div>\n` +
+        `    <div><span style="font-size: 11px; color: #94a3b8;">Estimated Cost:</span><br/><strong style="font-size: 20px; color: #f59e0b;">${formattedTotal}</strong></div>\n` +
+        `    <div><span style="font-size: 11px; color: #34d399;">Rate:</span><br/><strong style="font-size: 15px; color: white;">₹ ${ratePerSqft}/sq ft</strong></div>\n` +
+        `  </div>\n` +
+        `</div>\n\n` +
+        `### 📊 1. Labor & Cost Breakdown\n` +
+        `• **Building Materials (55%):** ₹ ${materialCost.toLocaleString('en-IN')}\n` +
+        `• **Skilled Labour & Masonry (30%):** ₹ ${laborCost.toLocaleString('en-IN')}\n` +
+        `• **Approvals & Contingency (15%):** ₹ ${reserveCost.toLocaleString('en-IN')}\n\n` +
+        `### 📦 2. Essential Material Quantities\n` +
+        `• **Cement (50kg bags):** ${cementBags.toLocaleString()} Bags (UltraTech / ACC)\n` +
+        `• **TMT Steel Rebar:** ${steelTons} Tons (Tata Tiscon Fe-550D)\n` +
+        `• **Bricks / AAC Blocks:** ${bricks.toLocaleString()} Pcs\n` +
+        `• **Flooring Tiles:** ${tiles.toLocaleString()} Sq Ft\n\n` +
+        `📌 *Note: Dynamic estimate computed for user query area of ${parsedSqft.toLocaleString()} sq ft.*`;
 
       setMessages(prev => [
         ...prev,
         {
           sender: 'bot',
           text: fallbackText,
-          model: "Groq Llama 3 70B (Offline Engine)"
+          model: "Groq Llama 3 70B (Dynamic Engine)"
         }
       ]);
     } finally {

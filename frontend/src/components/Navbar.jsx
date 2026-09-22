@@ -18,10 +18,9 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'services', label: '5 Core Services', icon: Briefcase },
+    { id: 'services', label: 'Services', icon: Briefcase },
     { id: 'blueprints', label: 'House Blueprints', icon: Compass },
     { id: 'portfolio', label: 'Portfolio', icon: Sparkles },
-    { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
   ];
 
   const handleNavClick = (tabId) => {
@@ -98,14 +97,7 @@ export function Navbar({ onToggleChat, isChatOpen, activeTab, setActiveTab, onOp
             <span className="hidden sm:inline">Ask AI Assistant</span>
           </motion.button>
 
-          {/* Staff Lock Button */}
-          <button
-            onClick={onOpenHiddenAdmin}
-            title="Internal Staff Login"
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            <Lock className="w-4 h-4" />
-          </button>
+
 
           {/* Mobile Hamburger Menu Toggle Button */}
           <button

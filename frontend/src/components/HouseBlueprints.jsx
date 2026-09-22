@@ -112,8 +112,261 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
   const [activeBlueprintId, setActiveBlueprintId] = useState('villa1500');
   const [selectedReferenceImage, setSelectedReferenceImage] = useState(0);
   const [isTopViewModalOpen, setIsTopViewModalOpen] = useState(false);
+  const [activeFloor, setActiveFloor] = useState('ground');
 
   const activePlan = blueprints.find(b => b.id === activeBlueprintId) || blueprints[0];
+
+  const renderBlueprintLayout = () => {
+    if (activePlan.id === 'compact1200') {
+      return (
+        <div className="space-y-4 w-full">
+          <div className="flex justify-between items-center bg-slate-900 text-white p-2.5 rounded-xl text-xs">
+            <span className="font-bold text-amber-400">Ground Floor Plan (2 BHK Single Story)</span>
+            <span className="text-slate-300 font-mono">East Entrance (Vastu Compliant)</span>
+          </div>
+
+          <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+            <div className="col-span-12 border-2 border-dashed border-emerald-600 p-3 bg-emerald-50/60 rounded text-center">
+              <div className="font-bold text-xs uppercase text-emerald-950">Covered Entrance Verandah & Porch</div>
+              <div className="text-sm font-extrabold text-emerald-800">10'0" x 12'0" (120 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Main East Entry Gate • Anti-skid Granite Finish</div>
+            </div>
+
+            <div className="col-span-8 border-2 border-slate-900 p-5 bg-amber-50/60 rounded text-center flex flex-col justify-center space-y-1">
+              <div className="font-bold text-xs uppercase text-amber-950">Living & Dining Hall</div>
+              <div className="text-base font-extrabold text-amber-900">12'0" x 15'0" (180 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Cross Ventilation UPVC Windows • TV Wall Unit</div>
+            </div>
+
+            <div className="col-span-4 border-2 border-slate-900 p-4 bg-blue-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-blue-950">Kitchen & Utility</div>
+              <div className="text-sm font-extrabold text-blue-900">8'0" x 10'0" (80 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Granite Counter & Hob • Agni Corner</div>
+            </div>
+
+            <div className="col-span-6 border-2 border-slate-900 p-4 bg-indigo-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-indigo-950">Master Bedroom</div>
+              <div className="text-sm font-extrabold text-indigo-900">11'0" x 12'0" (132 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">South-West Kuber Location • Wardrobe Niche</div>
+            </div>
+
+            <div className="col-span-6 border-2 border-slate-900 p-4 bg-purple-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-purple-950">Bedroom 2 / Kids Room</div>
+              <div className="text-sm font-extrabold text-purple-900">10'0" x 11'0" (110 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Study Desk Niche • North Window</div>
+            </div>
+
+            <div className="col-span-12 border-2 border-slate-900 p-3 bg-rose-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-rose-950">Common Bathroom & Toilet</div>
+              <div className="text-sm font-extrabold text-rose-900">5'0" x 7'0" (35 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Concealed CPVC Fittings • Vertical Exhaust Shaft</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (activePlan.id === 'luxury3200') {
+      return (
+        <div className="space-y-4 w-full">
+          <div className="flex flex-wrap items-center justify-between bg-slate-900 text-white p-2.5 rounded-xl text-xs gap-2">
+            <div className="flex items-center gap-2 font-bold text-amber-400">
+              <span>Select Triplex Floor Plan:</span>
+            </div>
+            <div className="flex gap-2">
+              {[
+                { id: 'ground', label: 'Ground (Grand Foyer)' },
+                { id: 'first', label: '1st Floor (Presidential)' },
+                { id: 'second', label: '2nd Floor (Sky Lounge)' }
+              ].map((fl) => (
+                <button
+                  key={fl.id}
+                  onClick={() => setActiveFloor(fl.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeFloor === fl.id
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  {fl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeFloor === 'ground' && (
+            <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+              <div className="col-span-8 border-2 border-slate-900 p-6 bg-amber-50/60 rounded text-center space-y-1.5">
+                <div className="font-bold text-xs uppercase text-amber-950">Double-Height Grand Foyer & Living</div>
+                <div className="text-base font-extrabold text-amber-900">20'0" x 25'0" (500 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">22ft Ceiling Clearance • Italian Bottochino Marble • Glass Atrium</div>
+              </div>
+
+              <div className="col-span-4 border-2 border-slate-900 p-4 bg-blue-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-blue-950">Gourmet Island Kitchen & Pantry</div>
+                <div className="text-sm font-extrabold text-blue-900">12'0" x 14'0" (168 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Breakfast Bar • Built-in Oven Unit • Agni Corner</div>
+              </div>
+
+              <div className="col-span-7 border-2 border-slate-900 p-4 bg-indigo-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-indigo-950">Ground Guest Suite + Bath</div>
+                <div className="text-sm font-extrabold text-indigo-900">14'0" x 16'0" (224 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Attached 6'x9' Bathroom • Garden View French Door</div>
+              </div>
+
+              <div className="col-span-5 border-2 border-slate-900 p-4 bg-purple-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-purple-950">Servant Quarter & Utility</div>
+                <div className="text-sm font-extrabold text-purple-900">8'0" x 10'0" (80 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Separate External Entrance • Utility Wash</div>
+              </div>
+
+              <div className="col-span-12 border-2 border-dashed border-amber-600 p-2.5 bg-amber-100/50 rounded text-center">
+                <div className="font-bold text-xs text-amber-900">Hydraulic Glass Elevator & Grand Curved Spiral Staircase (8'x8')</div>
+              </div>
+            </div>
+          )}
+
+          {activeFloor === 'first' && (
+            <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+              <div className="col-span-7 border-2 border-slate-900 p-5 bg-indigo-50/60 rounded text-center space-y-1.5">
+                <div className="font-bold text-xs uppercase text-indigo-950">Presidential Master Suite</div>
+                <div className="text-base font-extrabold text-indigo-900">16'0" x 20'0" (320 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Walk-in Closet (8'x10') • Jacuzzi Bath (8'x10') • Teak Wood Flooring</div>
+              </div>
+
+              <div className="col-span-5 border-2 border-slate-900 p-4 bg-amber-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-amber-950">Home Theatre & Family Lounge</div>
+                <div className="text-sm font-extrabold text-amber-900">16'0" x 18'0" (288 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Acoustic Wall Panels • 4K Projector Setup</div>
+              </div>
+
+              <div className="col-span-8 border-2 border-slate-900 p-4 bg-purple-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-purple-950">Bedroom 2 En-Suite Suite</div>
+                <div className="text-sm font-extrabold text-purple-900">14'0" x 15'0" (210 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Private Balcony Access • Attached Bath</div>
+              </div>
+
+              <div className="col-span-4 border-2 border-dashed border-slate-400 p-4 bg-slate-200/60 rounded text-center space-y-1 flex flex-col justify-center">
+                <div className="font-bold text-xs uppercase text-slate-700">Double Height Void Cutout</div>
+                <div className="text-[10px] text-slate-500">Overlooks Ground Floor Grand Foyer</div>
+              </div>
+            </div>
+          )}
+
+          {activeFloor === 'second' && (
+            <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+              <div className="col-span-7 border-2 border-slate-900 p-5 bg-sky-50/60 rounded text-center space-y-1.5">
+                <div className="font-bold text-xs uppercase text-sky-950">Penthouse Sky Lounge & Bar Zone</div>
+                <div className="text-base font-extrabold text-sky-900">18'0" x 22'0" (396 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Motorized Glass Pergola • Bar Counter • Ambient Lighting</div>
+              </div>
+
+              <div className="col-span-5 border-2 border-slate-900 p-4 bg-emerald-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-emerald-950">Covered Deck & Jacuzzi Zone</div>
+                <div className="text-sm font-extrabold text-emerald-900">12'0" x 14'0" (168 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Heated 6-Seater Outdoor Jacuzzi • Deck Wood Flooring</div>
+              </div>
+
+              <div className="col-span-12 border-2 border-slate-900 p-4 bg-rose-50/60 rounded text-center space-y-1">
+                <div className="font-bold text-xs uppercase text-rose-950">Private Gym & Wellness Sauna</div>
+                <div className="text-sm font-extrabold text-rose-900">14'0" x 16'0" (224 Sq Ft)</div>
+                <div className="text-[10px] text-slate-600">Rubberized Flooring • Steam Bath & Cedar Sauna Cabin</div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Default Villa 1500 Layout
+    return (
+      <div className="space-y-4 w-full">
+        <div className="flex flex-wrap items-center justify-between bg-slate-900 text-white p-2.5 rounded-xl text-xs gap-2">
+          <div className="flex items-center gap-2 font-bold text-amber-400">
+            <span>Select Duplex Floor Plan:</span>
+          </div>
+          <div className="flex gap-2">
+            {[
+              { id: 'ground', label: 'Ground Floor (G)' },
+              { id: 'first', label: 'First Floor (F1)' }
+            ].map((fl) => (
+              <button
+                key={fl.id}
+                onClick={() => setActiveFloor(fl.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  activeFloor === fl.id
+                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {fl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {activeFloor === 'ground' ? (
+          <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+            <div className="col-span-6 border-2 border-slate-900 p-4 bg-amber-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-amber-950">Master Bedroom 1</div>
+              <div className="text-sm font-extrabold text-amber-900">10'0" x 12'0" (120 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">South-West Vastu Kuber • Attached Bath (4'x7')</div>
+            </div>
+
+            <div className="col-span-6 border-2 border-slate-900 p-4 bg-indigo-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-indigo-950">Guest Bedroom 2</div>
+              <div className="text-sm font-extrabold text-indigo-900">10'0" x 12'0" (120 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">North-West Corner • UPVC Window</div>
+            </div>
+
+            <div className="col-span-4 border-2 border-slate-900 p-4 bg-blue-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-blue-950">Modular Kitchen</div>
+              <div className="text-sm font-extrabold text-blue-900">8'4" x 11'0" (92 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Agni South-East Corner • Quartz Top</div>
+            </div>
+
+            <div className="col-span-4 border-2 border-slate-900 p-5 bg-emerald-50/60 rounded text-center flex flex-col justify-center space-y-1">
+              <div className="font-bold text-xs uppercase text-emerald-950">Dining & Living Foyer</div>
+              <div className="text-base font-extrabold text-emerald-900">11'0" x 16'0" (176 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">North-East Eshanya Main Entrance</div>
+            </div>
+
+            <div className="col-span-4 border-2 border-slate-900 p-4 bg-purple-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-purple-950">RCC Staircase & Lift</div>
+              <div className="text-sm font-extrabold text-purple-900">5'3" x 5'0" (26 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Dog-legged Stairs to F1</div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-12 gap-2.5 border-4 border-slate-900 p-4 bg-slate-50 font-mono text-slate-900">
+            <div className="col-span-7 border-2 border-slate-900 p-5 bg-amber-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-amber-950">Upper Bedroom 3 Suite</div>
+              <div className="text-base font-extrabold text-amber-900">11'4" x 10'0" (115 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Wooden Flooring • Walk-in Closet • En-suite Bath</div>
+            </div>
+
+            <div className="col-span-5 border-2 border-slate-900 p-4 bg-emerald-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-emerald-950">Private Open Terrace & Balcony</div>
+              <div className="text-sm font-extrabold text-emerald-900">14'0" x 12'0" (168 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Glass Railing • Weatherproof Deck Tiles</div>
+            </div>
+
+            <div className="col-span-8 border-2 border-slate-900 p-4 bg-indigo-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-indigo-950">Upper Family Lobby & Sitout</div>
+              <div className="text-sm font-extrabold text-indigo-900">11'0" x 10'0" (110 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Seating Area • Sky Light</div>
+            </div>
+
+            <div className="col-span-4 border-2 border-slate-900 p-4 bg-purple-50/60 rounded text-center space-y-1">
+              <div className="font-bold text-xs uppercase text-purple-950">Stair Landing & Lift</div>
+              <div className="text-sm font-extrabold text-purple-900">5'3" x 5'0" (26 Sq Ft)</div>
+              <div className="text-[10px] text-slate-600">Access from Ground Floor</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="w-full bg-slate-50 py-12 px-4 sm:px-6 lg:px-12 border-t border-b border-slate-200/80">
@@ -161,21 +414,32 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
           {/* Reference Image Gallery Column (7 Cols) */}
           <div className="lg:col-span-7 bg-slate-900 p-6 flex flex-col justify-between space-y-4">
             {/* Main Featured Reference Photo */}
-            <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden border border-white/10 group">
-              <img
+            <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden border border-white/10 group shadow-2xl transition-all duration-500">
+              <motion.img
+                key={selectedReferenceImage}
+                initial={{ opacity: 0.8, scale: 1.03 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={springTransition}
                 src={activePlan.referenceImages[selectedReferenceImage]?.url || activePlan.referenceImages[0].url}
                 alt={activePlan.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
               
-              {/* Badge */}
-              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold border border-white/20">
-                📷 Reference View: {activePlan.referenceImages[selectedReferenceImage]?.label}
+              {/* Glossy iOS Reflection Sweep on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
+
+              {/* Top Right iOS Hover Badge */}
+              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+                <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-amber-400 text-[11px] font-bold border border-amber-400/30 shadow-lg flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3" />
+                  <span>iOS Interactive View</span>
+                </span>
               </div>
 
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent z-10" />
+              
               {/* View Top View Blueprint Trigger Overlay */}
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
+              <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-20">
                 <div className="text-white">
                   <div className="text-xs text-slate-300 font-medium">{activePlan.title}</div>
                   <div className="text-lg font-bold text-amber-400">{activePlan.sqft} sq ft • {activePlan.bhk}</div>
@@ -183,6 +447,7 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
 
                 <motion.button
                   whileTap={bouncyTap}
+                  whileHover={{ scale: 1.05 }}
                   onClick={() => setIsTopViewModalOpen(true)}
                   className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-lg flex items-center gap-2 border border-amber-400"
                 >
@@ -193,23 +458,25 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
             </div>
 
             {/* Thumbnail Selector Bar */}
-            <div className="grid grid-cols-4 gap-2 pt-2">
+            <div className="grid grid-cols-4 gap-2.5 pt-2">
               {activePlan.referenceImages.map((img, idx) => (
-                <button
+                <motion.button
                   key={idx}
+                  whileHover={{ scale: 1.06, y: -3 }}
+                  whileTap={bouncyTap}
                   onClick={() => setSelectedReferenceImage(idx)}
-                  className={`relative h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                  className={`relative h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
                     selectedReferenceImage === idx
-                      ? 'border-amber-400 ring-2 ring-amber-400/50 scale-[1.02]'
+                      ? 'border-amber-400 ring-2 ring-amber-400/50 scale-[1.03] shadow-lg shadow-amber-500/20'
                       : 'border-white/20 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-slate-950/30" />
-                  <span className="absolute bottom-1 left-1 right-1 text-[9px] font-bold text-white truncate text-center">
+                  <img src={img.url} alt={img.label} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                  <div className="absolute inset-0 bg-slate-950/30 hover:bg-transparent transition-colors" />
+                  <span className="absolute bottom-1 left-1 right-1 text-[9px] font-bold text-white truncate text-center bg-slate-950/60 backdrop-blur-sm py-0.5 rounded">
                     {img.label}
                   </span>
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -268,12 +535,6 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
                   <div>• Tiles: <span className="font-bold text-white">{activePlan.materials.tiles}</span></div>
                 </div>
               </div>
-
-              {/* Code Compliance */}
-              <div className="flex items-center gap-2 text-xs text-emerald-800 font-semibold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>100% Vastu Shastra & NBC Structural Code Compliant</span>
-              </div>
             </div>
 
             {/* Action Buttons */}
@@ -330,10 +591,10 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
                   </div>
                   <div>
                     <h3 className="text-xl font-extrabold text-slate-900">
-                      {activePlan.title} — 2D Top-View Architectural Blueprint
+                      {activePlan.title} — 2D Architectural Floor Plan
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Official CAD Top-View Plan with Room Dimensions & Wall Boundaries
+                      Official Floor Plan with Room Dimensions & Structural Boundaries
                     </p>
                   </div>
                 </div>
@@ -363,53 +624,8 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
                   </div>
 
                   {/* CAD Top View Room Layout Grid */}
-                  <div className="grid grid-cols-12 gap-3 border-2 border-slate-900 p-4 bg-slate-50">
-                    
-                    {/* Top Row: Bedroom 1 & Bedroom 2 */}
-                    <div className="col-span-6 border-2 border-slate-800 p-4 bg-amber-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Bedroom 1</div>
-                      <div className="text-sm font-extrabold text-amber-800">10'0" x 12'0"</div>
-                      <div className="text-[10px] text-slate-500">120 Sq Ft • Attached Toilet</div>
-                    </div>
-
-                    <div className="col-span-6 border-2 border-slate-800 p-4 bg-amber-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Bedroom 2</div>
-                      <div className="text-sm font-extrabold text-amber-800">10'0" x 12'0"</div>
-                      <div className="text-[10px] text-slate-500">120 Sq Ft • UPVC Window</div>
-                    </div>
-
-                    {/* Middle Row: Kitchen, Dining, Staircase */}
-                    <div className="col-span-4 border-2 border-slate-800 p-4 bg-blue-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Modular Kitchen</div>
-                      <div className="text-sm font-extrabold text-blue-900">8'4" x 11'0"</div>
-                      <div className="text-[10px] text-slate-500">Quartz Counter & Hob</div>
-                    </div>
-
-                    <div className="col-span-4 border-2 border-slate-800 p-6 bg-emerald-50/40 rounded text-center space-y-1 flex flex-col items-center justify-center">
-                      <div className="font-bold text-xs uppercase">Dining & Living Foyer</div>
-                      <div className="text-base font-extrabold text-emerald-900">11'0" x 16'0"</div>
-                      <div className="text-[10px] text-slate-500">176 Sq Ft • Bottochino Marble</div>
-                    </div>
-
-                    <div className="col-span-4 border-2 border-slate-800 p-4 bg-purple-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Staircase & Lift</div>
-                      <div className="text-sm font-extrabold text-purple-900">5'3" x 5'0"</div>
-                      <div className="text-[10px] text-slate-500">RCC Dog-Legged Stairs</div>
-                    </div>
-
-                    {/* Bottom Row: Bedroom 3 & Bath/Toilet */}
-                    <div className="col-span-7 border-2 border-slate-800 p-4 bg-amber-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Bedroom 3 (Master Suite)</div>
-                      <div className="text-sm font-extrabold text-amber-800">11'4" x 10'0"</div>
-                      <div className="text-[10px] text-slate-500">115 Sq Ft • Wooden Flooring</div>
-                    </div>
-
-                    <div className="col-span-5 border-2 border-slate-800 p-4 bg-rose-50/40 rounded text-center space-y-1">
-                      <div className="font-bold text-xs uppercase">Toilet & Wash</div>
-                      <div className="text-sm font-extrabold text-rose-900">4'0" x 7'0"</div>
-                      <div className="text-[10px] text-slate-500">Concealed CPVC Piping</div>
-                    </div>
-
+                  <div className="w-full">
+                    {renderBlueprintLayout()}
                   </div>
 
                   <div className="mt-4 flex justify-between items-center text-[11px] text-slate-600 font-sans border-t border-slate-300 pt-2">

@@ -199,29 +199,41 @@ export default function PortfolioSwiper({ onSelectProjectForLayout }) {
                     className="h-full bg-white/90 rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
                   >
                     {/* Image Header with Transformation Toggle */}
-                    <div className="relative h-72 sm:h-80 w-full bg-slate-900 overflow-hidden">
-                      <img 
+                    <div className="relative h-72 sm:h-80 w-full bg-slate-900 overflow-hidden group/img cursor-pointer">
+                      <motion.img 
+                        key={displayImage}
+                        initial={{ scale: 1.05, opacity: 0.9 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={springTransition}
                         src={displayImage} 
                         alt={project.title} 
-                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/img:scale-110"
                       />
                       
+                      {/* Glossy Reflection Sweep on Hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/img:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
+
                       {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent z-10" />
 
                       {/* Top Badges */}
-                      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+                      <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                         <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-900 text-xs font-bold tracking-wide shadow-sm">
                           {project.categoryLabel}
                         </span>
                         
-                        <button
-                          onClick={() => toggleImage(project.id)}
+                        <motion.button
+                          whileTap={bouncyTap}
+                          whileHover={{ scale: 1.05 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleImage(project.id);
+                          }}
                           className="px-3.5 py-1.5 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/20 text-white text-xs font-semibold hover:bg-slate-900 transition-colors flex items-center gap-1.5 shadow-md"
                         >
                           <Eye className="w-3.5 h-3.5 text-amber-400" />
                           <span>View {currentToggle === 'before' ? 'After Build' : 'Before Site'}</span>
-                        </button>
+                        </motion.button>
                       </div>
 
                       {/* Bottom Info Bar over Image */}

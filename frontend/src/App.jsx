@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Navbar } from './components/Navbar';
 import HeroHome from './components/HeroHome';
@@ -19,6 +19,38 @@ export default function App() {
   const [isHiddenAdminOpen, setIsHiddenAdminOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState('');
 
+  // Dynamic Scroll Spy: Updates navbar active tab based on scroll position
+  useEffect(() => {
+    const sections = ['home', 'services', 'blueprints', 'portfolio'];
+
+    const handleScroll = () => {
+      const scrollPos = window.scrollY + 180;
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const id = sections[i];
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollPos) {
+          setActiveTab(id);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'chat') {
+      setIsChatOpen(true);
+      return;
+    }
+    const el = document.getElementById(tabId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const handleOpenRoomLayout = (project) => {
     setSelectedModalProject(project);
     setIsRoomModalOpen(true);
@@ -26,12 +58,12 @@ export default function App() {
 
   const handleSelectServiceForQuote = (service) => {
     setChatInitialPrompt(`Can you give me a detailed cost and timeline breakdown for ${service.title}?`);
-    setActiveTab('chat');
+    setIsChatOpen(true);
   };
 
   const handleSelectBlueprintForQuote = (blueprint) => {
     setChatInitialPrompt(`I am interested in the ${blueprint.title} (${blueprint.sqft} sq ft). What is the total budget and material quantity list?`);
-    setActiveTab('chat');
+    setIsChatOpen(true);
   };
 
   return (
@@ -42,77 +74,36 @@ export default function App() {
         onToggleChat={() => setIsChatOpen((prev) => !prev)}
         isChatOpen={isChatOpen}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabClick}
         onOpenHiddenAdmin={() => setIsHiddenAdminOpen(true)}
       />
 
       {/* Main Content View */}
-      <main className="flex-1 w-full mx-auto">
+      <main className="flex-1 w-full mx-auto space-y-8 pb-16">
         
-        {/* TAB 1: HOME PAGE */}
-        {activeTab === 'home' && (
-          <motion.div variants={staggerContainer} initial="hidden" animate="show" className="space-y-12 pb-16">
-            <HeroHome
-              onExploreServices={() => setActiveTab('services')}
-              onExploreBlueprints={() => setActiveTab('blueprints')}
-              onOpenChat={() => setActiveTab('chat')}
-            />
+        {/* SECTION 1: HOME */}
+        <section id="home" className="scroll-mt-16">
+          <HeroHome
+            onExploreServices={() => handleTabClick('services')}
+            onExploreBlueprints={() => handleTabClick('blueprints')}
+            onOpenChat={() => setIsChatOpen(true)}
+          />
+        </section>
 
-            <ServicesSwiper onSelectService={handleSelectServiceForQuote} />
+        {/* SECTION 2: 5 CORE SERVICES */}
+        <section id="services" className="scroll-mt-16 pt-2 pb-6">
+          <ServicesSwiper onSelectService={handleSelectServiceForQuote} />
+        </section>
 
-            <HouseBlueprints onInquireBlueprint={handleSelectBlueprintForQuote} />
+        {/* SECTION 3: HOUSE BLUEPRINTS */}
+        <section id="blueprints" className="scroll-mt-16 pt-2 pb-6">
+          <HouseBlueprints onInquireBlueprint={handleSelectBlueprintForQuote} />
+        </section>
 
-            <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
-
-            <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-              <div className="text-center max-w-2xl mx-auto mb-8">
-                <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold uppercase tracking-wider border border-amber-200/80">
-                  Instant Structural Advisor
-                </span>
-                <h2 className="text-3xl font-extrabold text-slate-900 mt-2">Groq AI Construction Advisor</h2>
-                <p className="text-slate-600 text-sm mt-1">Get precise Indian civil estimates, material counts & labor rates</p>
-              </div>
-              <AIAdvisorChat initialPrompt={chatInitialPrompt} onSiteVisitBooked={() => setIsChatOpen(true)} />
-            </div>
-          </motion.div>
-        )}
-
-
-
-        {/* TAB 2: 5 CORE SERVICES */}
-        {activeTab === 'services' && (
-          <motion.div variants={fadeInUp} initial="hidden" animate="show" className="py-8">
-            <ServicesSwiper onSelectService={handleSelectServiceForQuote} />
-          </motion.div>
-        )}
-
-        {/* TAB 3: HOUSE BLUEPRINTS */}
-        {activeTab === 'blueprints' && (
-          <motion.div variants={fadeInUp} initial="hidden" animate="show" className="py-8">
-            <HouseBlueprints onInquireBlueprint={handleSelectBlueprintForQuote} />
-          </motion.div>
-        )}
-
-        {/* TAB 4: PORTFOLIO SHOWCASE */}
-        {activeTab === 'portfolio' && (
-          <motion.div variants={fadeInUp} initial="hidden" animate="show" className="py-8">
-            <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
-          </motion.div>
-        )}
-
-        {/* TAB 5: AI ADVISOR CHAT */}
-        {activeTab === 'chat' && (
-          <motion.div variants={fadeInUp} initial="hidden" animate="show" className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-            <div className="text-center max-w-2xl mx-auto mb-8">
-              <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold uppercase tracking-wider border border-emerald-200">
-                AI Construction Assistant
-              </span>
-              <h2 className="text-3xl font-extrabold text-slate-900 mt-2">ConstructAI Smart Advisor</h2>
-              <p className="text-slate-600 text-sm mt-1">Ask any building query or click a quick suggestion chip below</p>
-            </div>
-            <AIAdvisorChat initialPrompt={chatInitialPrompt} onSiteVisitBooked={() => setIsChatOpen(true)} />
-          </motion.div>
-        )}
+        {/* SECTION 4: PORTFOLIO SHOWCASE */}
+        <section id="portfolio" className="scroll-mt-16 pt-2 pb-6">
+          <PortfolioSwiper onSelectProjectForLayout={handleOpenRoomLayout} />
+        </section>
 
       </main>
 
@@ -121,6 +112,7 @@ export default function App() {
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         currentConfig={{ sqft: 1500, floors: 2, region: 'Mumbai MMR' }}
+        initialPrompt={chatInitialPrompt}
       />
 
       {/* Room Layout Inspector Modal */}
@@ -138,14 +130,17 @@ export default function App() {
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-200 bg-white py-8 px-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 ConstructAI Pro • Turn-Key Construction & Architectural Excellence</p>
-          <button
-            onClick={() => setIsHiddenAdminOpen(true)}
-            className="text-slate-400 hover:text-slate-600 text-[11px] underline"
-          >
-            Staff Portal Access
-          </button>
+        <div className="max-w-7xl mx-auto flex items-center justify-center">
+          <p>
+            <span
+              onClick={() => setIsHiddenAdminOpen(true)}
+              className="cursor-pointer hover:text-slate-900 transition-colors select-none font-bold text-slate-400 p-1"
+              title="Staff Portal Access"
+            >
+              ©
+            </span>
+            {' '}2026 ConstructAI Pro • Turn-Key Construction & Architectural Excellence
+          </p>
         </div>
       </footer>
     </div>

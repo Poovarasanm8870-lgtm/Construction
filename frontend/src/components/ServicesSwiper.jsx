@@ -119,25 +119,7 @@ export default function ServicesSwiper({ onSelectService }) {
             </p>
           </div>
 
-          {/* Toggle View Pills */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
-            <button
-              onClick={() => setViewMode('slider')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'slider' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Carousel View
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                viewMode === 'grid' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Full Grid View
-            </button>
-          </div>
+
         </div>
 
         {/* Content Display: Slider vs Grid */}
@@ -200,9 +182,9 @@ export default function ServicesSwiper({ onSelectService }) {
 function ServiceCard({ service, IconComponent, onSelectService }) {
   return (
     <motion.div
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -6, scale: 1.015 }}
       transition={springTransition}
-      className="h-full bg-slate-50/90 rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-6"
+      className="h-full bg-white/90 backdrop-blur-md rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-2xl hover:border-amber-400/40 transition-all duration-300 flex flex-col justify-between space-y-6 group"
     >
       <div>
         {/* Top Header */}

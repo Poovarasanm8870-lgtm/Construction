@@ -10,16 +10,52 @@ import {
   RefreshCw,
   Calculator,
   MessageSquare,
-  ShieldCheck
 } from 'lucide-react';
 import { bouncyTap, springTransition } from '../animations/iosSprings';
+
+function parseBold(str) {
+  if (typeof str !== 'string') return str;
+  const parts = str.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={index} className="font-bold text-slate-900">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function renderFormattedText(text) {
+  if (!text) return null;
+
+  let html = text;
+
+  // 1. Process headings: ### Header -> <h4 class="...">Header</h4>
+  html = html.replace(/^###\s+(.*$)/gim, '<h4 class="font-bold text-slate-900 mt-4 mb-1.5 text-xs sm:text-sm border-b border-slate-200/80 pb-1 block">$1</h4>');
+
+  // 2. Process bullet points: • Item -> bullet point block on new line
+  html = html.replace(/^[•\-\*]\s+(.*$)/gim, '<div class="flex items-start gap-2 text-xs sm:text-sm text-slate-700 py-0.5 pl-1 leading-relaxed"><span class="text-amber-600 font-bold font-mono text-sm shrink-0">•</span><span>$1</span></div>');
+
+  // 3. Process bold text: **text** -> <strong>text</strong>
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-950">$1</strong>');
+
+  return (
+    <div 
+      className="font-sans leading-relaxed text-xs sm:text-sm text-slate-800 space-y-1"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
 
 export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked }) {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
       text: "👋 **Hello! I'm your ConstructAI Structural Advisor.**\n\nAsk me any question about house construction costs, plumbing, electrical wiring, or floor plans in Indian Rupees (₹).\n\nTry clicking one of the quick suggestions pinned directly above the input bar below!",
-      model: "Groq Civil Engine"
+      model: "ConstructAI Civil Engineer"
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -84,21 +120,83 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
         {
           sender: 'bot',
           text: data.message,
-          model: data.model_used || "Groq Llama 3 70B"
+          model: data.model_used || "ConstructAI Senior Civil Engineer"
         }
       ]);
     } catch (err) {
-      // Deterministic Offline Fallback Response with zero backend jargon
-      let botReply = `🏠 **ConstructAI Construction Estimate**\n\n` +
-        `Estimated budget for **1,500 sq ft** (G+1, 3 BHK Villa) is **₹ 48.5 Lakhs** (approx. **₹ 1,850/sq ft**).\n\n` +
-        `**Itemized Cost & Labour Breakdown:**\n` +
-        `• **Building Materials (55%):** ₹ 26.67 Lakhs\n` +
-        `• **Skilled Labour & Masonry (30%):** ₹ 14.55 Lakhs\n` +
-        `• **Approvals & Reserve Buffer (15%):** ₹ 7.28 Lakhs\n\n` +
-        `📦 **Key Materials:** Cement: 600 Bags | Steel: 5.25 Tons | AAC Blocks: 27,000 Pcs\n\n` +
-        `📌 *Note: Final quotation is subject to site soil inspection.*`;
+      // Dynamic Fallback Response with Top Summary Card matching user requested sqft
+      const sqftMatch = textToSend.match(/(\d[\d,]*)\s*(?:sq\s*ft|square\s*feet|sqft|sft|sq\s*feet|sq|ft2|square\s*ft|feet|ft)?/i);
+      const parsedSqft = (sqftMatch && parseInt(sqftMatch[1].replace(/,/g, ''), 10) >= 100)
+        ? parseInt(sqftMatch[1].replace(/,/g, ''), 10)
+        : 1500;
 
-      if (textToSend.toLowerCase().includes('plumbing')) {
+      const totalCostLakhs = ((parsedSqft * 1850) / 100000).toFixed(2);
+      const laborTotalLakhs = ((parsedSqft * 1850 * 0.3) / 100000).toFixed(2);
+      const laborMasonryLakhs = ((parsedSqft * 1850 * 0.3 * 0.65) / 100000).toFixed(2);
+      const laborPlumbElecLakhs = ((parsedSqft * 1850 * 0.3 * 0.22) / 100000).toFixed(2);
+      const laborFinishingLakhs = ((parsedSqft * 1850 * 0.3 * 0.13) / 100000).toFixed(2);
+
+      const cementBags = Math.round(parsedSqft * 0.4);
+      const cementCostLakhs = ((cementBags * 380) / 100000).toFixed(2);
+      const materialTotalLakhs = ((parsedSqft * 1850 * 0.55) / 100000).toFixed(2);
+      const steelTons = (parsedSqft * 0.0035).toFixed(2);
+      const bricksPcs = Math.round(parsedSqft * 18);
+
+      let botReply = 
+        '<div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 20px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 20px;">\n' +
+        '  <div style="font-size: 11px; text-transform: uppercase; color: #fbbf24; font-weight: 700; tracking: 1px; margin-bottom: 8px;">🏗️ ConstructAI Project Cost Summary</div>\n' +
+        '  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; text-align: left;">\n' +
+        '    <div><span style="font-size: 11px; color: #94a3b8;">Total Sq Ft:</span><br/><strong style="font-size: 16px; color: white;">' + parsedSqft.toLocaleString() + ' sq ft</strong></div>\n' +
+        '    <div><span style="font-size: 11px; color: #94a3b8;">Estimated Cost:</span><br/><strong style="font-size: 20px; color: #f59e0b;">₹ ' + totalCostLakhs + ' Lakhs</strong></div>\n' +
+        '    <div><span style="font-size: 11px; color: #94a3b8;">Package Type:</span><br/><strong style="font-size: 15px; color: #34d399;">Premium Turnkey</strong></div>\n' +
+        '    <div><span style="font-size: 11px; color: #94a3b8;">Location:</span><br/><strong style="font-size: 15px; color: white;">Mumbai MMR</strong></div>\n' +
+        '  </div>\n' +
+        '</div>\n\n' +
+        '### 👷 1. Itemized Labour Breakdown (Separately Specified)\n' +
+        '• **Base Turnkey Rate:** ₹ 1,850 per sq ft for ' + parsedSqft.toLocaleString() + ' sq ft\n' +
+        '• **Total Labour Wages (30%):** ₹ ' + laborTotalLakhs + ' Lakhs\n' +
+        '• **Skilled Masonry & RCC Structure Labour:** ₹ ' + laborMasonryLakhs + ' Lakhs (Masons @ ₹ 950/day)\n' +
+        '• **Plumbing & Electrical Technical Labour:** ₹ ' + laborPlumbElecLakhs + ' Lakhs\n' +
+        '• **Painting & Finishing Labour:** ₹ ' + laborFinishingLakhs + ' Lakhs\n\n' +
+        '### 🧱 2. Cement Material Breakdown (Separately Specified)\n' +
+        '• **Total Cement Quantity:** ~' + cementBags.toLocaleString() + ' Bags (50kg Bags)\n' +
+        '• **Estimated Cement Cost:** ₹ ' + cementCostLakhs + ' Lakhs (@ ₹ 380/bag)\n' +
+        '• **Brand Specification:** UltraTech 53 Grade / ACC Concrete+\n\n' +
+        '### 📦 3. Other Essential Material Quantities\n' +
+        '• **Total Materials Budget (55%):** ₹ ' + materialTotalLakhs + ' Lakhs\n' +
+        '• **TMT Steel Rebar:** ~' + steelTons + ' Tons (Tata Tiscon Fe-550D)\n' +
+        '• **AAC Blocks / Bricks:** ~' + bricksPcs.toLocaleString() + ' Pcs\n\n' +
+        '### ⏳ 4. Project Timeline & Approvals\n' +
+        '• **Build Duration:** 6 - 8 Months\n' +
+        '• **Approvals & 10% Reserve Buffer:** ₹ ' + ((parsedSqft * 1850 * 0.15) / 100000).toFixed(2) + ' Lakhs\n\n' +
+        '📌 *Note: Final quotation is subject to site soil inspection and approved architectural plan.*';
+
+      const lowerText = textToSend.toLowerCase().trim();
+
+      if (lowerText === 'labour' || lowerText === 'labor' || (lowerText.includes('labour') && !/\d/.test(lowerText)) || (lowerText.includes('labor') && !/\d/.test(lowerText))) {
+        botReply = `👷 **ConstructAI Skilled Labour & Masonry Rate Card (India 2026)**\n\n` +
+          `• **RCC Structure & Centering Labour:** ₹ 240 / sq ft\n` +
+          `• **Brickwork & Wall Plastering Labour:** ₹ 110 / sq ft\n` +
+          `• **Tile Laying & Flooring Labour:** ₹ 45 / sq ft\n` +
+          `• **Internal & External Painting Labour:** ₹ 22 / sq ft\n` +
+          `• **Plumbing & Electrical Technical Labour:** ₹ 160 / sq ft\n\n` +
+          `### 🛠️ Daily Wage Rates (Standard 8-Hour Shift):\n` +
+          `• **Skilled Head Mason (Rajmistri):** ₹ 950 - ₹ 1,100 / day\n` +
+          `• **Bar Bending Steel Worker:** ₹ 900 - ₹ 1,050 / day\n` +
+          `• **Certified Plumber / Electrician:** ₹ 850 - ₹ 1,000 / day\n` +
+          `• **Unskilled Helper (Mazdoor):** ₹ 650 - ₹ 750 / day`;
+      } else if (lowerText === 'cement' || (lowerText.includes('cement') && !/\d/.test(lowerText))) {
+        botReply = `🧱 **ConstructAI Cement Specifications & Pricing Guide (2026)**\n\n` +
+          `• **UltraTech 53 Grade PPC Cement:** ₹ 380 / 50kg bag\n` +
+          `• **ACC Concrete+ Weather Shield:** ₹ 395 / 50kg bag\n` +
+          `• **Ambuja Kawach Waterproof Cement:** ₹ 410 / 50kg bag\n` +
+          `• **Birla Gold / Shree Cement:** ₹ 375 / 50kg bag\n\n` +
+          `### 📊 Material Consumption & Engineering Standards:\n` +
+          `• **RCC Structural Consumption:** ~0.4 Bags per sq ft of built-up area\n` +
+          `• **RCC Slab Concrete Mix (M25):** 1 : 1.5 : 3 (1 Cement : 1.5 Sand : 3 Aggregate)\n` +
+          `• **Wall Masonry Mortar (1:6):** 1 Bag Cement per 120 AAC Blocks / Bricks\n` +
+          `• **Wall Plaster Mortar (1:4):** 1 Bag Cement covers ~90 sq ft (12mm thickness)`;
+      } else if (textToSend.toLowerCase().includes('plumbing')) {
         botReply = `🚿 **Professional Plumbing Rates & Services:**\n\n` +
           `• **Concealed Water & Drainage Lines:** ₹ 180 / sq ft\n` +
           `• **Jaquar/Kohler Fixture Installation:** Included in Turnkey package\n` +
@@ -132,6 +230,7 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
       setLoading(false);
     }
   };
+
 
   return (
     <div className="w-full bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden flex flex-col h-[650px] max-w-4xl mx-auto">
@@ -181,9 +280,10 @@ export default function AIAdvisorChat({ initialPrompt = '', onSiteVisitBooked })
                 ? 'bg-slate-900 text-white rounded-br-none'
                 : 'bg-white text-slate-900 border border-slate-200/80 rounded-bl-none'
             }`}>
-              <div className="whitespace-pre-wrap font-sans">
-                {msg.text}
+              <div className="font-sans">
+                {renderFormattedText(msg.text)}
               </div>
+
 
               {msg.sender === 'bot' && (
                 <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-600 font-medium">

@@ -30,7 +30,7 @@ export default function HeroHome({ onExploreServices, onExploreBlueprints, onOpe
   ];
 
   return (
-    <div className="w-full bg-slate-50 py-12 lg:py-16 px-4 sm:px-6 lg:px-8">
+    <div className="w-full bg-slate-50 pt-3 sm:pt-4 pb-12 lg:pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Main Hero Header */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
