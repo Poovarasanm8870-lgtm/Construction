@@ -84,46 +84,136 @@ export default function GroqChatEstimator({ initialSqft = 1500, onBookingTrigger
         }
       ]);
     } catch (err) {
-      // Deterministic Offline Fallback Response with Dynamic Custom SqFt Parsing
+      const textLower = textToSend.toLowerCase();
       const match = textToSend.match(/(\d[\d,]*)\s*(?:sq\s*ft|square\s*feet|sqft|sft|sq\s*feet|sq|ft2|square\s*ft|feet|ft)?/i);
       const parsedSqft = match && parseInt(match[1].replace(/,/g, ''), 10) >= 100 
         ? parseInt(match[1].replace(/,/g, ''), 10) 
         : (parseInt(sqftInput, 10) || 1500);
 
-      const ratePerSqft = 1850;
-      const totalCost = parsedSqft * ratePerSqft;
-      const materialCost = Math.round(totalCost * 0.55);
-      const laborCost = Math.round(totalCost * 0.30);
-      const reserveCost = Math.round(totalCost * 0.15);
+      let fallbackText = '';
 
-      const cementBags = Math.round(parsedSqft * 0.4);
-      const steelTons = (parsedSqft * 0.0035).toFixed(2);
-      const bricks = Math.round(parsedSqft * 18);
-      const tiles = Math.round(parsedSqft * 1.5);
+      if (
+        textLower.includes('how many days') || 
+        textLower.includes('how long') || 
+        textLower.includes('timing') || 
+        textLower.includes('days occur') || 
+        textLower.includes('time to build') || 
+        textLower.includes('completion time') ||
+        textLower.includes('labour working') ||
+        textLower.includes('labor working') ||
+        textLower.includes('actual timing')
+      ) {
+        const workerMatch = textToSend.match(/(\d+)\s*(?:labours?|laborers?|labourers?|labors?|workers?|masons?|men|people)/i);
+        const workers = workerMatch ? Math.max(1, parseInt(workerMatch[1], 10)) : 5;
+        const floors = 2;
+        const totalBuiltArea = parsedSqft * floors;
 
-      const formattedTotal = totalCost >= 10000000 
-        ? `₹ ${(totalCost / 10000000).toFixed(2)} Cr`
-        : `₹ ${(totalCost / 100000).toFixed(2)} Lakhs`;
+        const perWorkerOutput = 6.25;
+        const teamDailyOutput = workers * perWorkerOutput;
+        const workingDays = Math.ceil(totalBuiltArea / teamDailyOutput);
+        const totalMandays = workingDays * workers;
+        const totalHours = totalMandays * 8;
 
-      const fallbackText = 
-        `<div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 20px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 20px;">\n` +
-        `  <div style="font-size: 11px; text-transform: uppercase; color: #fbbf24; font-weight: 700; tracking: 1px; margin-bottom: 8px;">🏗️ ConstructAI Dynamic Estimate</div>\n` +
-        `  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: left;">\n` +
-        `    <div><span style="font-size: 11px; color: #94a3b8;">Total Sq Ft:</span><br/><strong style="font-size: 16px; color: white;">${parsedSqft.toLocaleString()} sq ft</strong></div>\n` +
-        `    <div><span style="font-size: 11px; color: #94a3b8;">Estimated Cost:</span><br/><strong style="font-size: 20px; color: #f59e0b;">${formattedTotal}</strong></div>\n` +
-        `    <div><span style="font-size: 11px; color: #34d399;">Rate:</span><br/><strong style="font-size: 15px; color: white;">₹ ${ratePerSqft}/sq ft</strong></div>\n` +
-        `  </div>\n` +
-        `</div>\n\n` +
-        `### 📊 1. Labor & Cost Breakdown\n` +
-        `• **Building Materials (55%):** ₹ ${materialCost.toLocaleString('en-IN')}\n` +
-        `• **Skilled Labour & Masonry (30%):** ₹ ${laborCost.toLocaleString('en-IN')}\n` +
-        `• **Approvals & Contingency (15%):** ₹ ${reserveCost.toLocaleString('en-IN')}\n\n` +
-        `### 📦 2. Essential Material Quantities\n` +
-        `• **Cement (50kg bags):** ${cementBags.toLocaleString()} Bags (UltraTech / ACC)\n` +
-        `• **TMT Steel Rebar:** ${steelTons} Tons (Tata Tiscon Fe-550D)\n` +
-        `• **Bricks / AAC Blocks:** ${bricks.toLocaleString()} Pcs\n` +
-        `• **Flooring Tiles:** ${tiles.toLocaleString()} Sq Ft\n\n` +
-        `📌 *Note: Dynamic estimate computed for user query area of ${parsedSqft.toLocaleString()} sq ft.*`;
+        const curingDays = floors * 14;
+        const dryingBufferDays = Math.ceil(workingDays * 0.35);
+        const totalActualDays = workingDays + curingDays + dryingBufferDays;
+        const totalActualMonths = (totalActualDays / 30).toFixed(1);
+
+        fallbackText = `⏱️ **ConstructAI Labour Working Time & Actual Build Duration Calculation**\n\n` +
+          `### 📊 Project Parameters:\n` +
+          `• **House Footprint Area:** ${parsedSqft.toLocaleString()} sq ft (G+1 = ${totalBuiltArea.toLocaleString()} sq ft total)\n` +
+          `• **Labour Workforce Deployed:** **${workers} Labours / Workers**\n` +
+          `• **Team Daily Output Speed:** ~${teamDailyOutput.toFixed(1)} Sq Ft built per day\n\n` +
+          `--- \n\n` +
+          `### 👷 1. Labour Working Time (Pure On-Site Labour Days)\n` +
+          `• **On-Site Active Labour Working Days:** **~${workingDays.toLocaleString()} Working Days**\n` +
+          `• **Total Labour Mandays:** ~${totalMandays.toLocaleString()} Mandays (${workingDays} days × ${workers} workers)\n` +
+          `• **Total Labour Execution Hours:** ~${totalHours.toLocaleString()} Hours\n\n` +
+          `--- \n\n` +
+          `### 🏗️ 2. Actual Timing to Build (Total Calendar Finish Duration)\n` +
+          `• **RCC Slab Water Curing Time:** +${curingDays} Days (${floors} RCC slabs @ 14 days curing/slab)\n` +
+          `• **Plaster Drying, Paint Coats & Weather Buffer (+35%):** +${dryingBufferDays} Days\n` +
+          `• **Total Actual Project Finish Duration:** **~${totalActualDays.toLocaleString()} Days (~${totalActualMonths} Months)**\n\n` +
+          `--- \n\n` +
+          `### 💡 Key Insights on Labour Timing vs. Actual Build Time:\n` +
+          `1. **Why Actual Build Time is Longer:** Structural RCC slabs require compulsory 14–21 days of continuous water curing per floor to gain full strength before brickwork or upper floors can start.\n` +
+          `2. **Workforce Impact:** Deploying ${workers} labours takes ~${workingDays} working days on site. Increasing team size reduces pure working days!`;
+      } else if (textLower.includes('paint') || textLower.includes('painting')) {
+        const paintableSurface = Math.round(parsedSqft * 3.5);
+        const paintLabour = Math.round(parsedSqft * 22);
+        const paintMaterial = Math.round(parsedSqft * 24);
+        const totalPaint = paintLabour + paintMaterial;
+        fallbackText = `🎨 **ConstructAI Painting Cost Breakdown (${parsedSqft.toLocaleString()} sq ft House)**\n\n` +
+          `• **House Footprint Area:** ${parsedSqft.toLocaleString()} sq ft\n` +
+          `• **Estimated Paintable Surface Area (Walls + Ceilings):** ~${paintableSurface.toLocaleString()} sq ft\n` +
+          `• **Painting Labour Rate (Admin Setting):** ₹ 22 / sq ft\n` +
+          `• **Painting Labour Charges:** ₹ ${paintLabour.toLocaleString('en-IN')}\n` +
+          `• **Paint & Primer Materials (Asian Paints Royale + Damp Proof):** ~₹ ${paintMaterial.toLocaleString('en-IN')}\n` +
+          `• **Total Estimated Painting Budget:** **₹ ${totalPaint.toLocaleString('en-IN')}**\n\n` +
+          `### 🛠️ Execution Process:\n` +
+          `1. Wall cleaning, scraping & 1 coat Acrylic Primer\n` +
+          `2. 2 coats acrylic wall putty for smooth mirror finish\n` +
+          `3. 2 coats premium washable interior/exterior emulsion\n\n` +
+          `📌 *Calculated strictly for painting work. Changing the Painting Rate in the Admin Panel updates this budget!*`;
+      } else if (textLower.includes('tile') || textLower.includes('tiles') || textLower.includes('flooring')) {
+        const tileLabour = Math.round(parsedSqft * 45);
+        const tileMaterial = Math.round(parsedSqft * 65);
+        fallbackText = `🧱 **ConstructAI Flooring & Tile Fitting Cost (${parsedSqft.toLocaleString()} sq ft House)**\n\n` +
+          `• **Floor Area:** ${parsedSqft.toLocaleString()} sq ft\n` +
+          `• **Tile Fitting Labour Rate (Admin Setting):** ₹ 45 / sq ft\n` +
+          `• **Tile Laying Labour Charges:** ₹ ${tileLabour.toLocaleString('en-IN')}\n` +
+          `• **Vitrified Tiles Material (Somany 800x800mm):** ~₹ ${tileMaterial.toLocaleString('en-IN')}\n` +
+          `• **Total Estimated Flooring Budget:** **₹ ${(tileLabour + tileMaterial).toLocaleString('en-IN')}**\n\n` +
+          `📌 *Calculated strictly for tile fitting & flooring.*`;
+      } else if (textLower.includes('leak') || textLower.includes('leakage') || textLower.includes('seepage') || textLower.includes('dampness') || textLower.includes('ceiling')) {
+        fallbackText = `🛠️ **ConstructAI Civil Engineering Solution for Ceiling Water Leakage & Seepage**\n\n` +
+          `Ceiling water leakage is usually caused by terrace slab cracks, upper-floor bathroom piping leaks, or inadequate waterproofing.\n\n` +
+          `### 🔍 1. Root Cause Identification\n` +
+          `• **Terrace Slab Cracks:** Rainwater seeps through micro-cracks on the terrace roof.\n` +
+          `• **Bathroom/Plumbing Leaks:** Concealed CPVC/UPVC pipe joint leaks from the floor above.\n` +
+          `• **Parapet Wall Dampness:** Inadequate coping and moisture penetration in brick masonry.\n\n` +
+          `### 🏗️ 2. Recommended Step-by-Step Remedial Treatment\n` +
+          `1. **Surface Scraping & Cleaning:** Remove damp, flaking plaster down to the bare RCC slab.\n` +
+          `2. **Crack Filling & Injection Grouting:** Fill structural cracks with Polymer Mortar / Dr. Fixit Crack-X Paste.\n` +
+          `3. **Dual-Coat Waterproofing Application:** Apply a 2-coat Polymer Modified Cementitious Coating (Dr. Fixit Fastflex / Pidifin 2K).\n` +
+          `4. **Protective Plaster & Damp-Proof Paint:** Re-plaster wall/ceiling with waterproof compound mortar and apply acrylic exterior damp-proof paint.\n\n` +
+          `📌 *Tip: Book a Free Site Visit through ConstructAI for a thermal imaging leak detection audit by a certified structural engineer.*`;
+      } else {
+        const ratePerSqft = 1850;
+        const totalCost = parsedSqft * ratePerSqft;
+        const materialCost = Math.round(totalCost * 0.55);
+        const laborCost = Math.round(totalCost * 0.30);
+        const reserveCost = Math.round(totalCost * 0.15);
+
+        const cementBags = Math.round(parsedSqft * 0.4);
+        const steelTons = (parsedSqft * 0.0035).toFixed(2);
+        const bricks = Math.round(parsedSqft * 18);
+        const tiles = Math.round(parsedSqft * 1.5);
+
+        const formattedTotal = totalCost >= 10000000 
+          ? `₹ ${(totalCost / 10000000).toFixed(2)} Cr`
+          : `₹ ${(totalCost / 100000).toFixed(2)} Lakhs`;
+
+        fallbackText = 
+          `<div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 20px; border-radius: 16px; border: 1px solid #334155; margin-bottom: 20px;">\n` +
+          `  <div style="font-size: 11px; text-transform: uppercase; color: #fbbf24; font-weight: 700; tracking: 1px; margin-bottom: 8px;">🏗️ ConstructAI Dynamic Estimate</div>\n` +
+          `  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; text-align: left;">\n` +
+          `    <div><span style="font-size: 11px; color: #94a3b8;">Total Sq Ft:</span><br/><strong style="font-size: 16px; color: white;">${parsedSqft.toLocaleString()} sq ft</strong></div>\n` +
+          `    <div><span style="font-size: 11px; color: #94a3b8;">Estimated Cost:</span><br/><strong style="font-size: 20px; color: #f59e0b;">${formattedTotal}</strong></div>\n` +
+          `    <div><span style="font-size: 11px; color: #34d399;">Rate:</span><br/><strong style="font-size: 15px; color: white;">₹ ${ratePerSqft}/sq ft</strong></div>\n` +
+          `  </div>\n` +
+          `</div>\n\n` +
+          `### 📊 1. Labor & Cost Breakdown\n` +
+          `• **Building Materials (55%):** ₹ ${materialCost.toLocaleString('en-IN')}\n` +
+          `• **Skilled Labour & Masonry (30%):** ₹ ${laborCost.toLocaleString('en-IN')}\n` +
+          `• **Approvals & Contingency (15%):** ₹ ${reserveCost.toLocaleString('en-IN')}\n\n` +
+          `### 📦 2. Essential Material Quantities\n` +
+          `• **Cement (50kg bags):** ${cementBags.toLocaleString()} Bags (UltraTech / ACC)\n` +
+          `• **TMT Steel Rebar:** ${steelTons} Tons (Tata Tiscon Fe-550D)\n` +
+          `• **Bricks / AAC Blocks:** ${bricks.toLocaleString()} Pcs\n` +
+          `• **Flooring Tiles:** ${tiles.toLocaleString()} Sq Ft\n\n` +
+          `📌 *Note: Dynamic estimate computed for user query area of ${parsedSqft.toLocaleString()} sq ft.*`;
+      }
 
       setMessages(prev => [
         ...prev,

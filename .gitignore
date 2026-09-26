@@ -29,8 +29,9 @@ db.sqlite3
 *.log
 .pytest_cache/
 
-# IDE / OS
+# IDE / OS / Temp
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+scratch/

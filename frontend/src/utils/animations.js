@@ -43,6 +43,11 @@ export const fadeInUp = {
 // iOS Modal Pop / Slide Drawer Variant
 export const drawerSlide = {
   hidden: { opacity: 0, x: "100%" },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: springTransition,
+  },
   show: {
     opacity: 1,
     x: 0,
@@ -54,6 +59,7 @@ export const drawerSlide = {
     transition: { duration: 0.2, ease: "easeIn" },
   },
 };
+
 
 export const modalPop = {
   hidden: { opacity: 0, scale: 0.95, y: 10 },

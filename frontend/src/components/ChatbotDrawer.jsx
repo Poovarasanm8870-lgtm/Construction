@@ -1,240 +1,456 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Bot, User, Zap, CheckCircle2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { X, Send, Bot, User, Zap, CheckCircle2, RefreshCw, ExternalLink, Globe, AlertCircle, HardHat, Building2, Layers, ShieldCheck } from 'lucide-react';
 import { drawerSlide } from '../utils/animations';
+import { CHAT_API_URL } from '../config/api';
 
-const SUGGESTED_CHIPS = [
-  "Estimate 1,500 sq ft house",
-  "Labour charges breakdown",
-  "Plumbing & Electrical rates",
-  "5 Core Services overview",
-  "Book Free Site Visit Inquiry"
+const MAIN_SUGGESTED_CHIPS = [
+  { label: "🏠 Build a House", query: "I want to build a house" },
+  { label: "🔩 What is Fe500?", query: "What is Fe500?" },
+  { label: "⚖️ Fe500 vs Fe550", query: "What is the difference between Fe500 and Fe550?" },
+  { label: "🧱 Cement Types", query: "What are the different types of cement used in construction?" },
+  { label: "🏗️ TMT Steel", query: "What is TMT steel?" },
+  { label: "💰 Construction Cost", query: "What is the approximate cost of building a house?" }
 ];
 
+function formatINR(amount) {
+  if (amount == null) return "₹ 0";
+  const num = Number(amount);
+  if (num >= 10000000) {
+    return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+  } else if (num >= 100000) {
+    return `₹ ${(num / 100000).toFixed(2)} Lakhs`;
+  }
+  return `₹ ${num.toLocaleString('en-IN')}`;
+}
+
+// 1. Cement Selection Cards Widget
+function CementSelectionView({ options, onSelect }) {
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  if (!options || options.length === 0) return null;
+
+  return (
+    <div className="mt-3.5 space-y-2.5">
+      <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1.5 px-1">
+        <span>🧱 Choose Preferred Cement Brand:</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {options.map((opt, idx) => {
+          const isSelected = selectedBrand === opt.brand;
+          return (
+            <div
+              key={idx}
+              className={`p-3 rounded-2xl bg-white border transition-all duration-200 shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+                isSelected ? 'border-2 border-amber-500 bg-amber-50/40 ring-2 ring-amber-400/20' : 'border-slate-200 hover:border-amber-400'
+              }`}
+            >
+              <div>
+                <div className="font-extrabold text-slate-900 text-xs flex items-center justify-between">
+                  <span>{opt.brand}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">{opt.grade}</span>
+                </div>
+                <div className="text-sm font-black text-amber-600 mt-1">
+                  ₹ {opt.price} <span className="text-[10px] text-slate-500 font-normal">/ {opt.unit}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{opt.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBrand(opt.brand);
+                  onSelect(opt.brand);
+                }}
+                className={`w-full mt-2 py-1.5 px-2 rounded-xl font-bold text-xs transition-all text-center cursor-pointer ${
+                  isSelected
+                    ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                    : 'bg-slate-900 hover:bg-slate-800 text-amber-400'
+                }`}
+              >
+                {isSelected ? `✓ Selected ${opt.brand}` : `Select ${opt.brand}`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 2. Steel Selection Cards Widget
+function SteelSelectionView({ options, onSelect }) {
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  if (!options || options.length === 0) return null;
+
+  return (
+    <div className="mt-3.5 space-y-2.5">
+      <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1.5 px-1">
+        <span>🔩 Choose Preferred Steel / TMT Rebar Brand:</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {options.map((opt, idx) => {
+          const isSelected = selectedBrand === opt.brand;
+          return (
+            <div
+              key={idx}
+              className={`p-3 rounded-2xl bg-white border transition-all duration-200 shadow-xs flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-md ${
+                isSelected ? 'border-2 border-amber-500 bg-amber-50/40 ring-2 ring-amber-400/20' : 'border-slate-200 hover:border-amber-400'
+              }`}
+            >
+              <div>
+                <div className="font-extrabold text-slate-900 text-xs flex items-center justify-between">
+                  <span>{opt.brand}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-mono">{opt.grade}</span>
+                </div>
+                <div className="text-sm font-black text-amber-600 mt-1">
+                  ₹ {opt.price?.toLocaleString()} <span className="text-[10px] text-slate-500 font-normal">/ {opt.unit}</span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{opt.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBrand(opt.brand);
+                  onSelect(opt.brand);
+                }}
+                className={`w-full mt-2 py-1.5 px-2 rounded-xl font-bold text-xs transition-all text-center cursor-pointer ${
+                  isSelected
+                    ? 'bg-amber-500 text-slate-950 shadow-sm font-black'
+                    : 'bg-slate-900 hover:bg-slate-800 text-amber-400'
+                }`}
+              >
+                {isSelected ? `✓ Selected ${opt.brand}` : `Select ${opt.brand}`}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 3. Workforce Selection Widget
+function WorkforceSelectionView({ options = [4, 6, 8, 10], labourConfig, onSelect }) {
+  const [selectedNum, setSelectedNum] = useState(null);
+
+  return (
+    <div className="mt-3.5 p-3.5 rounded-2xl bg-slate-900 text-white border border-amber-500/40 space-y-3 shadow-md">
+      <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider border-b border-slate-800 pb-1.5 flex items-center gap-1.5">
+        <HardHat size={14} /> Plan Site Workforce Count
+      </div>
+
+      <div className="text-[11px] text-slate-300">
+        Admin Daily Wages: Head Mason ₹{labourConfig?.head_mason_daily_wage || 950}/day, Helper ₹{labourConfig?.helper_daily_wage || 650}/day
+      </div>
+
+      <div className="flex gap-2">
+        {options.map((num) => {
+          const isSelected = selectedNum === num;
+          return (
+            <button
+              key={num}
+              type="button"
+              onClick={() => {
+                setSelectedNum(num);
+                onSelect(num.toString());
+              }}
+              className={`flex-1 py-2 rounded-xl font-bold text-xs border transition-all text-center cursor-pointer shadow-xs ${
+                isSelected
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-md scale-105'
+                  : 'bg-slate-800 hover:bg-amber-500 hover:text-slate-950 text-slate-100 border-slate-700 hover:border-amber-400'
+              }`}
+            >
+              👷 {isSelected ? `✓ ${num}` : num} Workers
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 4. Construction Package Cards (Economy | Standard | Premium)
+function ConstructionEstimateCard({ project, packages, onSelectPackage }) {
+  if (!packages || packages.length === 0) return null;
+
+  return (
+    <div className="mt-3.5 space-y-3">
+      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between text-xs font-semibold text-slate-800 gap-2">
+        <span className="flex items-center gap-1">📐 <strong>Area:</strong> {project?.sqft?.toLocaleString()} sq ft</span>
+        <span className="flex items-center gap-1">📍 <strong>Location:</strong> {project?.location}</span>
+        {project?.workforce_count && (
+          <span className="flex items-center gap-1">👷 <strong>Workforce:</strong> {project.workforce_count} workers</span>
+        )}
+      </div>
+
+      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-1">
+        Three Package Options:
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {packages.map((pkg) => {
+          const isStandard = pkg.id === 'standard';
+          return (
+            <div
+              key={pkg.id}
+              className={`p-3.5 rounded-2xl border transition-all duration-200 flex flex-col justify-between relative shadow-sm hover:-translate-y-1 hover:shadow-md ${
+                isStandard
+                  ? 'bg-slate-900 text-white border-amber-500 shadow-md ring-1 ring-amber-500/50'
+                  : 'bg-white text-slate-900 border-slate-200 hover:border-slate-400'
+              }`}
+            >
+              {isStandard && (
+                <div className="absolute top-0 right-0 bg-amber-500 text-slate-950 text-[9px] font-black uppercase px-2 py-0.5 rounded-bl-xl">
+                  Popular
+                </div>
+              )}
+
+              <div>
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md inline-block mb-1.5 ${
+                  isStandard ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-slate-100 text-slate-700 border border-slate-200'
+                }`}>
+                  {pkg.name}
+                </span>
+
+                <div className="my-1.5">
+                  <div className={`text-base font-extrabold ${isStandard ? 'text-amber-400' : 'text-slate-900'}`}>
+                    {formatINR(pkg.total_cost)}
+                  </div>
+                  <div className={`text-[10px] font-mono ${isStandard ? 'text-slate-400' : 'text-slate-500'}`}>
+                    ₹ {pkg.cost_per_sqft?.toLocaleString()} / sq ft
+                  </div>
+                </div>
+
+                <div className={`text-[10px] space-y-1 my-2.5 pt-2 border-t ${isStandard ? 'border-slate-800 text-slate-300' : 'border-slate-100 text-slate-600'}`}>
+                  <div>💰 Labour: {formatINR(pkg.labour_cost)}</div>
+                  <div>📦 Materials: {formatINR(pkg.material_cost)}</div>
+                  <div>🧱 {pkg.cement_type}</div>
+                  <div>🔩 {pkg.steel_type}</div>
+                  <div>✨ {pkg.flooring_level}</div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onSelectPackage(`Select ${pkg.name}`)}
+                className={`w-full mt-2 py-2 px-3 rounded-xl font-bold text-xs transition-all cursor-pointer text-center ${
+                  isStandard
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md font-extrabold'
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs'
+                }`}
+              >
+                Select {pkg.name}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 5. Package Confirmation Component
+function PackageConfirmationCard({ selectedPackage, project, onConfirm, onChangePackage }) {
+  if (!selectedPackage) return null;
+
+  return (
+    <div className="mt-3.5 p-4 rounded-2xl bg-emerald-950/50 border border-emerald-500/50 text-emerald-100 space-y-3 shadow-lg">
+      <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider border-b border-emerald-800/60 pb-2">
+        <CheckCircle2 size={16} /> Package Summary Confirmation
+      </div>
+
+      <div className="text-xs space-y-1.5">
+        <div>📍 <strong>Location:</strong> {project?.location}</div>
+        <div>📐 <strong>Area:</strong> {project?.sqft?.toLocaleString()} sq ft</div>
+        <div>📦 <strong>Selected Package:</strong> <span className="font-extrabold text-amber-400">{selectedPackage.name}</span></div>
+        <div>💵 <strong>Total Estimated Cost:</strong> <span className="font-extrabold text-white text-sm">{formatINR(selectedPackage.total_cost)}</span></div>
+        <div>👷 <strong>Labour Cost:</strong> {formatINR(selectedPackage.labour_cost)}</div>
+        <div>🧱 <strong>Material Cost:</strong> {formatINR(selectedPackage.material_cost)}</div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t border-emerald-800/60">
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer text-center"
+        >
+          ✓ Confirm Package
+        </button>
+        <button
+          type="button"
+          onClick={() => onChangePackage("I want to build a house")}
+          className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition-all cursor-pointer"
+        >
+          Change Selection
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 6. Source References Component
+function SourceReferences({ sources, liveWebUsed }) {
+  if (!sources || sources.length === 0) {
+    if (liveWebUsed === false) {
+      return (
+        <div className="mt-2 text-[10px] text-slate-400 italic bg-slate-100 p-2 rounded-lg border border-slate-200">
+          📌 Live web pricing was unavailable, so this estimate uses the configured database rates.
+        </div>
+      );
+    }
+    return null;
+  }
+
+  return (
+    <div className="mt-3 pt-2.5 border-t border-slate-200/80 space-y-1.5">
+      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+        <Globe size={11} className="text-amber-600" /> Researched Web Sources:
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {sources.slice(0, 4).map((src, idx) => (
+          <a
+            key={idx}
+            href={src.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-700 border border-slate-200 flex items-center gap-1 transition-all line-clamp-1 max-w-[220px]"
+            title={src.title}
+          >
+            <span className="truncate">{src.source || src.title}</span>
+            <ExternalLink size={9} className="shrink-0 text-slate-400" />
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function renderFormattedMessage(content) {
+  if (typeof content !== 'string') return content;
+
+  const lines = content.split('\n');
+  return lines.map((line, idx) => {
+    let text = line.trim();
+    if (!text) return <div key={idx} className="h-1.5" />;
+
+    if (text.startsWith('### ')) {
+      return <h4 key={idx} className="font-bold text-slate-900 text-xs sm:text-sm mt-3 mb-1 border-b border-slate-200 pb-0.5">{text.replace('### ', '')}</h4>;
+    }
+    if (text.startsWith('## ')) {
+      return <h3 key={idx} className="font-extrabold text-slate-900 text-sm sm:text-base mt-3 mb-1">{text.replace('## ', '')}</h3>;
+    }
+    if (text.startsWith('• ') || text.startsWith('- ')) {
+      return (
+        <div key={idx} className="flex items-start gap-1.5 text-xs sm:text-sm text-slate-700 my-0.5 pl-1 leading-relaxed">
+          <span className="text-amber-600 font-bold font-mono text-xs">•</span>
+          <span>{parseBold(text.substring(2))}</span>
+        </div>
+      );
+    }
+
+    return <p key={idx} className="text-xs sm:text-sm text-slate-800 leading-relaxed my-0.5">{parseBold(text)}</p>;
+  });
+}
+
 function parseBold(str) {
-  if (typeof str !== 'string') return str;
   const parts = str.split(/(\*\*.*?\*\*)/g);
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong key={index} className="font-bold text-slate-900">
-          {part.slice(2, -2)}
-        </strong>
-      );
+      return <strong key={index} className="font-extrabold text-slate-950">{part.slice(2, -2)}</strong>;
     }
     return part;
   });
 }
 
-function renderFormattedText(text) {
-  if (!text) return null;
-
-  let html = text;
-
-  // 1. Process headings: ### Header -> <h4 class="...">Header</h4>
-  html = html.replace(/^###\s+(.*$)/gim, '<h4 class="font-bold text-slate-900 mt-4 mb-1.5 text-xs sm:text-sm border-b border-slate-200/80 pb-1 block">$1</h4>');
-
-  // 2. Process bullet points: • Item -> bullet point block on new line
-  html = html.replace(/^[•\-\*]\s+(.*$)/gim, '<div class="flex items-start gap-2 text-xs sm:text-sm text-slate-700 py-0.5 pl-1 leading-relaxed"><span class="text-amber-600 font-bold font-mono text-sm shrink-0">•</span><span>$1</span></div>');
-
-  // 3. Process bold text: **text** -> <strong>text</strong>
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-950">$1</strong>');
-
-  return (
-    <div 
-      className="font-sans leading-relaxed text-xs sm:text-sm text-slate-800 space-y-1"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-}
-
 export function ChatbotDrawer({ isOpen, onClose, currentConfig, initialPrompt = '' }) {
   const [messages, setMessages] = useState([
     {
-      id: 'init-1',
+      id: 'welcome',
       sender: 'bot',
-      message: '👋 **Welcome to ConstructAI!**\n\nI am your AI Civil Engineering & Structural Advisor.\n\n• **Turnkey Cost Estimates:** Live rates for residential villas & buildings\n• **Material Breakdown:** Exact quantities of Cement, Steel & Bricks\n• **Labour & Masonry:** Hourly and per sq ft labor rate analysis\n• **Specialized Services:** Plumbing, wiring, interior design & blueprints',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      model: "ConstructAI Structural Advisor"
+      type: 'text',
+      message: '🏗️ **Hello! Welcome to ConstructAI.**\n\nI am your AI Construction & Civil Engineering Assistant. I can help with house cost estimation, material specifications, labour wages, structural engineering, and building guidance.\n\nHow can I help your construction project today?',
+      suggestions: ["🏠 Build a House", "🔩 What is Fe500?", "⚖️ Fe500 vs Fe550", "🧱 Cement Types"]
     }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [sessionId] = useState(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`);
-  const [visitBooked, setVisitBooked] = useState(false);
+  const [sessionId] = useState(() => 'sess_' + Math.random().toString(36).substring(2, 9));
+
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOpen, isTyping]);
-
-  // Handle initialPrompt passed from service/blueprint inquiry buttons
-  useEffect(() => {
-    if (isOpen && initialPrompt) {
+    if (isOpen && initialPrompt && initialPrompt.trim()) {
       handleSendMessage(initialPrompt);
     }
   }, [isOpen, initialPrompt]);
 
-  const handleSendMessage = async (textToSend, isVisitRequest = false) => {
-    const text = textToSend || inputText;
-    if (!text.trim() || isTyping) return;
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
 
-    const userMsg = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      message: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+  const handleSendMessage = async (textToSend) => {
+    const query = textToSend || inputText;
+    if (!query || !query.trim()) return;
 
+    const userMsg = { id: Date.now().toString(), sender: 'user', type: 'text', message: query };
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/chat/', {
+      const response = await fetch(CHAT_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
-          config: currentConfig || { sqft: 1500, floors: 2, region: 'Mumbai MMR' },
           session_id: sessionId,
-          request_visit: isVisitRequest
+          message: query,
+          config: currentConfig || {}
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        setIsTyping(false);
+        const botMsg = {
+          id: (Date.now() + 1).toString(),
+          sender: 'bot',
+          type: data.type || 'text',
+          message: data.message || '',
+          project: data.project,
+          options: data.options,
+          packages: data.packages,
+          selected_package: data.selected_package,
+          labour_wages_config: data.labour_wages_config,
+          sources: data.sources,
+          suggestions: data.suggestions || [],
+          live_web_pricing_used: data.live_web_pricing_used,
+          is_confirmed: data.is_confirmed
+        };
+        setMessages((prev) => [...prev, botMsg]);
+      } else {
+        console.error(`Chatbot API HTTP Error: status=${response.status}, url=${CHAT_API_URL}`);
         setMessages((prev) => [
           ...prev,
           {
-            id: `bot-${Date.now()}`,
+            id: (Date.now() + 1).toString(),
             sender: 'bot',
-            message: data.message,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            model: "ConstructAI Senior Civil Engineer"
+            type: 'text',
+            message: `⚠️ Connection error (HTTP ${response.status}). Please ensure Django backend is running at ${CHAT_API_URL}.`
           }
         ]);
-        if (isVisitRequest || text.toLowerCase().includes('visit')) setVisitBooked(true);
-      } else {
-        throw new Error('API server fallback');
       }
-    } catch (e) {
-      setIsTyping(false);
-
-      // Parse custom sqft dynamically from user text (e.g. 700 sq ft, 800 sq, etc.)
-      const sqftMatch = text.match(/(\d[\d,]*)\s*(?:sq\s*ft|square\s*feet|sqft|sft|sq\s*feet|sq|ft2|square\s*ft|feet|ft)?/i);
-      const parsedSqft = (sqftMatch && parseInt(sqftMatch[1].replace(/,/g, ''), 10) >= 100)
-        ? parseInt(sqftMatch[1].replace(/,/g, ''), 10)
-        : (currentConfig?.sqft || 1500);
-
-      const totalCostLakhs = ((parsedSqft * 1850) / 100000).toFixed(2);
-      const laborTotalLakhs = ((parsedSqft * 1850 * 0.3) / 100000).toFixed(2);
-      const laborMasonryLakhs = ((parsedSqft * 1850 * 0.3 * 0.65) / 100000).toFixed(2);
-      const laborPlumbElecLakhs = ((parsedSqft * 1850 * 0.3 * 0.22) / 100000).toFixed(2);
-      const laborFinishingLakhs = ((parsedSqft * 1850 * 0.3 * 0.13) / 100000).toFixed(2);
-
-      const cementBags = Math.round(parsedSqft * 0.4);
-      const cementCostLakhs = ((cementBags * 380) / 100000).toFixed(2);
-      const materialTotalLakhs = ((parsedSqft * 1850 * 0.55) / 100000).toFixed(2);
-      const steelTons = (parsedSqft * 0.0035).toFixed(2);
-      const bricksPcs = Math.round(parsedSqft * 18);
-
-      // Deterministic Fallback Response strictly formatted in Bullet Points
-      let botReply = 
-        '<div style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 14px; border-radius: 14px; border: 1px solid #334155; margin-bottom: 12px;">\n' +
-        '  <div style="font-size: 10px; text-transform: uppercase; color: #fbbf24; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px;">🏗️ ConstructAI Project Cost Summary</div>\n' +
-        '  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: left;">\n' +
-        '    <div><span style="font-size: 10px; color: #94a3b8;">Total Sq Ft:</span><br/><strong style="font-size: 14px; color: white;">' + parsedSqft.toLocaleString() + ' sq ft</strong></div>\n' +
-        '    <div><span style="font-size: 10px; color: #94a3b8;">Est. Cost:</span><br/><strong style="font-size: 16px; color: #f59e0b;">₹ ' + totalCostLakhs + ' Lakhs</strong></div>\n' +
-        '    <div><span style="font-size: 10px; color: #94a3b8;">Package:</span><br/><strong style="font-size: 12px; color: #34d399;">Premium Turnkey</strong></div>\n' +
-        '    <div><span style="font-size: 10px; color: #94a3b8;">Region:</span><br/><strong style="font-size: 12px; color: white;">' + (currentConfig?.region || 'Mumbai MMR') + '</strong></div>\n' +
-        '  </div>\n' +
-        '</div>\n\n' +
-        '### 👷 1. Itemized Labour Breakdown (Separately Specified)\n' +
-        '• **Base Turnkey Rate:** ₹ 1,850 per sq ft for ' + parsedSqft.toLocaleString() + ' sq ft\n' +
-        '• **Total Labour Wages (30%):** ₹ ' + laborTotalLakhs + ' Lakhs\n' +
-        '• **Skilled Masonry & RCC Structure Labour:** ₹ ' + laborMasonryLakhs + ' Lakhs (Masons @ ₹ 950/day)\n' +
-        '• **Plumbing & Electrical Technical Labour:** ₹ ' + laborPlumbElecLakhs + ' Lakhs\n' +
-        '• **Painting & Finishing Labour:** ₹ ' + laborFinishingLakhs + ' Lakhs\n\n' +
-        '### 🧱 2. Cement Material Breakdown (Separately Specified)\n' +
-        '• **Total Cement Quantity:** ~' + cementBags.toLocaleString() + ' Bags (50kg Bags)\n' +
-        '• **Estimated Cement Cost:** ₹ ' + cementCostLakhs + ' Lakhs (@ ₹ 380/bag)\n' +
-        '• **Brand Specification:** UltraTech 53 Grade / ACC Concrete+\n\n' +
-        '### 📦 3. Other Essential Material Quantities\n' +
-        '• **Total Materials Budget (55%):** ₹ ' + materialTotalLakhs + ' Lakhs\n' +
-        '• **TMT Steel Rebar:** ~' + steelTons + ' Tons (Tata Tiscon Fe-550D)\n' +
-        '• **AAC Blocks / Bricks:** ~' + bricksPcs.toLocaleString() + ' Pcs\n\n' +
-        '### ⏳ 4. Timeline & Approvals\n' +
-        '• **Completion Time:** 6 - 8 Months\n' +
-        '• **Structural Warranty:** 10 Years Protection Guarantee';
-
-      const lowerText = text.toLowerCase().trim();
-
-      if (lowerText === 'labour' || lowerText === 'labor' || (lowerText.includes('labour') && !/\d/.test(lowerText)) || (lowerText.includes('labor') && !/\d/.test(lowerText))) {
-        botReply = `👷 **ConstructAI Skilled Labour & Masonry Rate Card (India 2026)**\n\n` +
-          `• **RCC Structure & Centering Labour:** ₹ 240 / sq ft\n` +
-          `• **Brickwork & Wall Plastering Labour:** ₹ 110 / sq ft\n` +
-          `• **Tile Laying & Flooring Labour:** ₹ 45 / sq ft\n` +
-          `• **Internal & External Painting Labour:** ₹ 22 / sq ft\n` +
-          `• **Plumbing & Electrical Technical Labour:** ₹ 160 / sq ft\n\n` +
-          `### 🛠️ Daily Wage Rates (Standard 8-Hour Shift):\n` +
-          `• **Skilled Head Mason (Rajmistri):** ₹ 950 - ₹ 1,100 / day\n` +
-          `• **Bar Bending Steel Worker:** ₹ 900 - ₹ 1,050 / day\n` +
-          `• **Certified Plumber / Electrician:** ₹ 850 - ₹ 1,000 / day\n` +
-          `• **Unskilled Helper (Mazdoor):** ₹ 650 - ₹ 750 / day`;
-      } else if (lowerText === 'cement' || (lowerText.includes('cement') && !/\d/.test(lowerText))) {
-        botReply = `🧱 **ConstructAI Cement Specifications & Pricing Guide (2026)**\n\n` +
-          `• **UltraTech 53 Grade PPC Cement:** ₹ 380 / 50kg bag\n` +
-          `• **ACC Concrete+ Weather Shield:** ₹ 395 / 50kg bag\n` +
-          `• **Ambuja Kawach Waterproof Cement:** ₹ 410 / 50kg bag\n` +
-          `• **Birla Gold / Shree Cement:** ₹ 375 / 50kg bag\n\n` +
-          `### 📊 Material Consumption & Engineering Standards:\n` +
-          `• **RCC Structural Consumption:** ~0.4 Bags per sq ft of built-up area\n` +
-          `• **RCC Slab Concrete Mix (M25):** 1 : 1.5 : 3 (1 Cement : 1.5 Sand : 3 Aggregate)\n` +
-          `• **Wall Masonry Mortar (1:6):** 1 Bag Cement per 120 AAC Blocks / Bricks\n` +
-          `• **Wall Plaster Mortar (1:4):** 1 Bag Cement covers ~90 sq ft (12mm thickness)`;
-      } else if (text.toLowerCase().includes('plumbing') || text.toLowerCase().includes('electrical') || text.toLowerCase().includes('rates')) {
-        botReply = `🚿 **Plumbing & Electrical Standard Rates:**\n\n` +
-          `• **Concealed Water Lines:** ₹ 180 / sq ft (CPVC/UPVC)\n` +
-          `• **Concealed Copper Wiring:** ₹ 160 / sq ft (Polycab FR Wires)\n` +
-          `• **Schneider/Havells Switches & DB:** Included in Turnkey package\n` +
-          `• **Fixture Fitting:** Jaquar / Kohler certified installation`;
-      } else if (text.toLowerCase().includes('services')) {
-        botReply = `🛠️ **ConstructAI 5 Core Services:**\n\n` +
-          `• **Full-Scale Construction:** Turnkey Residential & Commercial build\n` +
-          `• **Professional Plumbing:** Hydro-tested CPVC/UPVC installation\n` +
-          `• **Electrical & Wiring:** Polycab Flame-Retardant Wiring\n` +
-          `• **Interior Design & Finishing:** Italian Marble & Modular Kitchens\n` +
-          `• **Roofing & Structural Renovation:** Dr. Fixit Polymer Waterproofing`;
-      } else if (text.toLowerCase().includes('visit') || isVisitRequest) {
-        botReply = `📅 **Site Visit Inspection Booked!**\n\n` +
-          `• **Inspection Status:** Registered successfully\n` +
-          `• **Assigned Engineer:** Senior Structural Engineer\n` +
-          `• **Contact Window:** Within 2 hours for free on-site consultation`;
-        setVisitBooked(true);
-      }
-
+    } catch (err) {
+      console.error('Chatbot API Network Exception:', err);
+      console.error('Target API URL:', CHAT_API_URL);
       setMessages((prev) => [
         ...prev,
         {
-          id: `bot-fb-${Date.now()}`,
+          id: (Date.now() + 1).toString(),
           sender: 'bot',
-          message: botReply,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          model: "Groq Civil Engine"
+          type: 'text',
+          message: `⚠️ Network connection issue. Server could not be reached at ${CHAT_API_URL}.`
         }
       ]);
-    }
-  };
-
-  const handleChipClick = (chipText) => {
-    if (chipText.includes('Site Visit')) {
-      handleSendMessage('I would like to book a free structural site visit inspection.', true);
-    } else {
-      handleSendMessage(chipText);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -247,142 +463,200 @@ export function ChatbotDrawer({ isOpen, onClose, currentConfig, initialPrompt = 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 lg:hidden"
+            className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs z-[998] cursor-pointer"
           />
 
           <motion.div
             variants={drawerSlide}
             initial="hidden"
-            animate="show"
+            animate="visible"
             exit="exit"
-            className="fixed top-0 right-0 bottom-0 w-full sm:w-[460px] bg-white border-l border-slate-200 z-50 flex flex-col shadow-2xl"
+            className="fixed inset-y-0 right-0 w-full sm:w-[480px] md:w-[540px] lg:w-[600px] bg-white shadow-2xl z-[999] flex flex-col border-l border-slate-200 selection:bg-amber-400"
           >
             {/* Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-900 text-white">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 p-[1.5px] shadow-sm">
-                  <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-amber-400" />
-                  </div>
+            <div className="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-slate-950 flex items-center justify-center font-black shadow-md">
+                  🏗️
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center space-x-2">
-                    <span>ConstructAI Assistant</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
+                    ConstructAI Assistant
                   </h3>
-                  <p className="text-[11px] text-slate-300 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                    <span>Groq Llama 3 70B • IS 456 Verified</span>
+                  <p className="text-[10px] text-amber-400 font-mono flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Civil Engineering & Real Research Engine
                   </p>
                 </div>
               </div>
 
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                aria-label="Close AI Assistant"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X size={18} />
               </button>
             </div>
 
-            {/* Chat Body (Scrollable Messages Area) */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-              {/* Messages Feed */}
+            {/* Permanent Main Suggested Chips Bar */}
+            <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 overflow-x-auto flex gap-1.5 scrollbar-none">
+              {MAIN_SUGGESTED_CHIPS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendMessage(chip.query)}
+                  className="text-[10px] font-bold px-3 py-1 rounded-full bg-white hover:bg-amber-400 hover:text-slate-950 text-slate-800 border border-slate-300 transition-all whitespace-nowrap cursor-pointer shadow-2xs hover:shadow-xs hover:border-amber-400"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Feed Container (Independent Scrolling Area) */}
+            <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50">
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex space-x-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.sender === 'bot' && (
-                    <div className="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center shrink-0 mt-1 shadow-2xs">
-                      <Bot className="w-4 h-4" />
+                    <div className="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center text-xs font-bold shrink-0 mt-1 shadow-xs">
+                      🏗️
                     </div>
                   )}
 
                   <div
-                    className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed ${
+                    className={`max-w-[88%] p-3.5 rounded-2xl shadow-xs text-xs sm:text-sm transition-all ${
                       msg.sender === 'user'
-                        ? 'bg-amber-500 text-slate-950 font-semibold rounded-tr-none shadow-xs'
-                        : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none space-y-2 shadow-xs'
+                        ? 'bg-amber-500 text-slate-950 font-medium rounded-tr-none shadow-xs'
+                        : msg.type === 'off_topic'
+                        ? 'bg-amber-50 border border-amber-300 text-slate-900 rounded-tl-none'
+                        : 'bg-white text-slate-800 border border-slate-200 rounded-tl-none shadow-xs'
                     }`}
                   >
-                    <div className="font-sans">
-                      {renderFormattedText(msg.message)}
-                    </div>
+                    <div>{renderFormattedMessage(msg.message)}</div>
 
-                    <div className={`text-[9px] font-mono text-right mt-1.5 ${msg.sender === 'user' ? 'text-amber-950/70 font-bold' : 'text-slate-400'}`}>
-                      {msg.timestamp} {msg.model ? `• ${msg.model}` : ''}
-                    </div>
+                    {/* Step 1: Cement Selection */}
+                    {msg.type === 'cement_selection' && (
+                      <CementSelectionView
+                        options={msg.options}
+                        onSelect={(brand) => handleSendMessage(brand)}
+                      />
+                    )}
+
+                    {/* Step 2: Steel Selection */}
+                    {msg.type === 'steel_selection' && (
+                      <SteelSelectionView
+                        options={msg.options}
+                        onSelect={(brand) => handleSendMessage(brand)}
+                      />
+                    )}
+
+                    {/* Step 3: Workforce Selection */}
+                    {msg.type === 'workforce_selection' && (
+                      <WorkforceSelectionView
+                        options={msg.options}
+                        labourConfig={msg.labour_wages_config}
+                        onSelect={(num) => handleSendMessage(num)}
+                      />
+                    )}
+
+                    {/* Step 4: Package Cards */}
+                    {(msg.type === 'package_selection' || msg.type === 'estimate') && msg.packages && (
+                      <ConstructionEstimateCard
+                        project={msg.project}
+                        packages={msg.packages}
+                        onSelectPackage={(pkgQuery) => handleSendMessage(pkgQuery)}
+                      />
+                    )}
+
+                    {/* Step 5: Confirmation Card */}
+                    {msg.type === 'confirmation' && msg.selected_package && (
+                      <PackageConfirmationCard
+                        selectedPackage={msg.selected_package}
+                        project={msg.project}
+                        onConfirm={() => handleSendMessage('Confirm Package')}
+                        onChangePackage={() => handleSendMessage('I want to build a house')}
+                      />
+                    )}
+
+                    {/* Step 6: Start New Estimate Action Button for Confirmed Estimate */}
+                    {msg.is_confirmed && (
+                      <div className="mt-3.5 pt-2 border-t border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => handleSendMessage('I want to build a house')}
+                          className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer hover:shadow-lg"
+                        >
+                          <span>🏠 Start New Estimate</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Sources Display */}
+                    {msg.sources && (
+                      <SourceReferences sources={msg.sources} liveWebUsed={msg.live_web_pricing_used} />
+                    )}
+
+                    {/* Context-Aware Follow-Up Suggestion Chips */}
+                    {msg.suggestions && msg.suggestions.length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex flex-wrap gap-1.5">
+                        {msg.suggestions.map((sug, sIdx) => (
+                          <button
+                            key={sIdx}
+                            type="button"
+                            onClick={() => handleSendMessage(sug)}
+                            className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-400 hover:text-slate-950 text-slate-800 border border-amber-300/60 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {msg.sender === 'user' && (
-                    <div className="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center shrink-0 mt-1 shadow-2xs">
-                      <User className="w-4 h-4" />
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-bold shrink-0 mt-1 shadow-xs">
+                      <User size={14} />
                     </div>
                   )}
                 </div>
               ))}
 
               {isTyping && (
-                <div className="flex space-x-2.5 items-center">
-                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 flex items-center justify-center">
-                    <Bot className="w-4 h-4 animate-spin text-amber-400" />
-                  </div>
-                  <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs text-slate-600 flex items-center space-x-2 shadow-2xs">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-600" />
-                    <span>Calculating Indian civil estimates & material rates...</span>
-                  </div>
+                <div className="flex gap-2 items-center text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                  <RefreshCw size={13} className="animate-spin text-amber-500" />
+                  <span>ConstructAI is thinking...</span>
                 </div>
               )}
-
-              {visitBooked && (
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl text-xs text-emerald-800 flex items-center space-x-2 shadow-2xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Free Site Visit Inquiry Registered! Our Senior Engineer will call you shortly.</span>
-                </div>
-              )}
-
               <div ref={messagesEndRef} />
             </div>
 
-            {/* PINNED QUICK SUGGESTIONS DIRECTLY ABOVE INPUT FORM */}
-            <div className="bg-slate-100/95 border-t border-slate-200 p-2.5 px-3.5 overflow-x-auto flex items-center gap-1.5 shrink-0 backdrop-blur-md">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1 shrink-0 mr-1">
-                <Zap className="w-3 h-3 text-amber-600" />
-                <span>Suggestions:</span>
-              </span>
-              {SUGGESTED_CHIPS.map((chip, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleChipClick(chip)}
-                  className="px-2.5 py-1 rounded-xl bg-white border border-slate-200/90 hover:border-amber-500 hover:text-slate-900 text-[11px] font-semibold text-slate-700 transition-all shrink-0 shadow-2xs"
-                >
-                  ⚡ {chip}
-                </button>
-              ))}
-            </div>
-
-            {/* Input Form */}
-            <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="p-3 sm:p-4 border-t border-slate-200 bg-white">
-              <div className="relative flex items-center">
+            {/* Input Container (Fixed at Bottom) */}
+            <div className="p-3 bg-white border-t border-slate-200">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="flex gap-2"
+              >
                 <input
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder="Ask e.g. '1500 sq ft house cost in Mumbai'..."
-                  className="w-full bg-slate-100 border border-slate-200 rounded-2xl pl-4 pr-12 py-3 text-xs font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all"
+                  placeholder="Ask about construction, materials, labour, or house cost..."
+                  className="flex-1 text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-amber-500 bg-slate-50 text-slate-900"
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isTyping}
-                  className="absolute right-2 p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold disabled:opacity-40 transition-all shadow-xs"
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-amber-400 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:cursor-not-allowed"
                 >
-                  <Send className="w-4 h-4 text-amber-400" />
+                  <span>Send</span>
+                  <Send size={13} />
                 </button>
-              </div>
-            </form>
-
+              </form>
+            </div>
           </motion.div>
         </>
       )}
@@ -391,4 +665,3 @@ export function ChatbotDrawer({ isOpen, onClose, currentConfig, initialPrompt = 
 }
 
 export default ChatbotDrawer;
-

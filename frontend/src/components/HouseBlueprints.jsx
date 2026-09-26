@@ -62,10 +62,11 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
       estimatedCost: "₹ 34.2 Lakhs",
       ratePerSqft: "₹ 1,780/sq ft",
       referenceImages: [
-        { label: "Exterior Facade", url: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b3?auto=format&fit=crop&w=1200&q=80" },
+        { label: "Exterior Facade", url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80" },
         { label: "Open Living Area", url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80" },
-        { label: "Compact Bedroom", url: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80" }
+        { label: "Compact Bedroom", url: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80" }
       ],
+
       blueprintTopView2D: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1400&q=80",
       rooms: [
         { name: "Living & Dining Hall", dimensions: '12\'0" x 15\'0"', sqft: 180, level: "Ground Floor" },
@@ -421,6 +422,10 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={springTransition}
                 src={activePlan.referenceImages[selectedReferenceImage]?.url || activePlan.referenceImages[0].url}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+                }}
                 alt={activePlan.title}
                 className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
               />
@@ -471,7 +476,16 @@ export default function HouseBlueprints({ onInquireBlueprint }) {
                       : 'border-white/20 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={img.url} alt={img.label} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" />
+                  <img
+                    src={img.url}
+                    alt={img.label}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80";
+                    }}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                  />
+
                   <div className="absolute inset-0 bg-slate-950/30 hover:bg-transparent transition-colors" />
                   <span className="absolute bottom-1 left-1 right-1 text-[9px] font-bold text-white truncate text-center bg-slate-950/60 backdrop-blur-sm py-0.5 rounded">
                     {img.label}

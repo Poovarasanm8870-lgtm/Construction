@@ -115,6 +115,8 @@ export default function App() {
         initialPrompt={chatInitialPrompt}
       />
 
+
+
       {/* Room Layout Inspector Modal */}
       <RoomLayoutModal
         project={selectedModalProject}

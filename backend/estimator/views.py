@@ -222,29 +222,41 @@ def get_floorplans(request):
     return Response(plans, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+from .services.chatbot_engine import process_chat_message
+
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def groq_ai_chat(request):
     """
-    POST /api/v1/chat/
-    Connects to Groq API (llama-3.3-70b-versatile) and logs conversation to ChatbotSession & ChatMessage models.
+    POST/GET /api/v1/chat/
+    Connects to Groq AI & Construction Chatbot Engine.
+    Returns structured JSON response.
     """
+    if request.method == 'GET':
+        return Response({
+            "status": "ConstructAI Construction Chatbot API Online",
+            "endpoint": "/api/v1/chat/",
+            "usage": "Send a POST request with JSON payload: { 'message': 'I want to build a house' }",
+            "supported_features": [
+                "Interactive Estimation Wizard",
+                "Dynamic Material & Steel Selection",
+                "Admin Panel Controlled Labour Rates",
+                "Real Web Research Integration",
+                "3 Package Tier Pricing (Economy, Standard, Premium)"
+            ]
+        }, status=status.HTTP_200_OK)
+
     user_message = request.data.get('message', '')
-    config = request.data.get('config', {})
     session_id = request.data.get('session_id', str(uuid.uuid4())[:8])
     request_visit = request.data.get('request_visit', False)
 
     if not user_message:
         return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
 
+
     # Get or Create ChatbotSession in Django DB
     session, created = ChatbotSession.objects.get_or_create(
-        session_id=session_id,
-        defaults={
-            'inquired_sqft': config.get('sqft', 2200),
-            'city_region': config.get('region', 'Mumbai MMR / Maharashtra'),
-            'requested_site_visit': request_visit
-        }
+        session_id=session_id
     )
 
     if request_visit:
@@ -258,30 +270,20 @@ def groq_ai_chat(request):
         message=user_message
     )
 
-    # Query Groq AI Service
-    ai_response = query_groq_ai_estimator(user_message, current_config=config)
-
-    # Update session metrics
-    if ai_response.get('calculation'):
-        session.inquired_budget_inr = ai_response['calculation']['summary']['grand_total_inr']
-        session.inquired_sqft = ai_response['calculation']['sqft']
-        session.save()
+    # Process Query through Chatbot State Machine Engine
+    chat_response = process_chat_message(session_id=session.session_id, user_message=user_message)
 
     # Log Bot Message
     ChatMessage.objects.create(
         session=session,
         sender='bot',
-        message=ai_response['text'],
-        calculation_snapshot=ai_response.get('calculation')
+        message=chat_response.get('message', ''),
+        calculation_snapshot=chat_response.get('packages') or chat_response.get('selected_package')
     )
 
-    return Response({
-        "session_id": session.session_id,
-        "sender": "bot",
-        "message": ai_response['text'],
-        "calculation": ai_response.get('calculation'),
-        "model_used": ai_response.get('model_used', 'Groq Llama 3 70B')
-    }, status=status.HTTP_200_OK)
+    chat_response["model_used"] = "Groq Llama 3 70B & Construction Engine"
+    return Response(chat_response, status=status.HTTP_200_OK)
+
 
 
 @api_view(['GET'])
@@ -362,3 +364,107 @@ def calculate_pricing(request):
         region=data.get('region', 'Mumbai MMR / Maharashtra')
     )
     return Response(result, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_pdf_knowledge(request):
+    """
+    POST /api/v1/admin/upload-pdf/
+    Uploads a PDF knowledge base document, parses text chunks,
+    and indexes them into the Vector DB for Groq AI RAG search.
+    """
+    from .services.vector_db import vector_db_instance
+    
+    pdf_file = request.FILES.get('pdf_file') or request.FILES.get('file')
+    filename = request.data.get('filename', '')
+
+    if not pdf_file:
+        # Check if text content or raw base64/data was sent in JSON body
+        text_content = request.data.get('text_content', '')
+        custom_title = request.data.get('title', 'Admin Custom Knowledge Doc')
+        if text_content:
+            doc_id = f"admin-doc-{uuid.uuid4().hex[:6]}"
+            vector_db_instance.add_document(doc_id=doc_id, title=custom_title, content=text_content, source="Admin Portal Input")
+            return Response({
+                "message": "Custom knowledge document indexed into Vector DB successfully!",
+                "document": {
+                    "id": doc_id,
+                    "title": custom_title,
+                    "chunks_indexed": 1,
+                    "source": "Admin Portal Input"
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({'error': 'No PDF file or document text provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    filename = filename or pdf_file.name
+    pdf_bytes = pdf_file.read()
+
+    result = vector_db_instance.parse_and_index_pdf(pdf_bytes, filename)
+
+    return Response({
+        "message": f"Successfully processed and indexed PDF '{filename}' into Vector DB!",
+        "indexing_details": result
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_vector_documents(request):
+    """
+    GET /api/v1/admin/vector-docs/
+    Returns list of all active documents indexed inside Vector DB.
+    """
+    from .services.vector_db import vector_db_instance
+    docs = vector_db_instance.get_all_documents()
+    return Response({
+        "total_documents": len(docs),
+        "documents": docs
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def manage_admin_labour_rates(request):
+    """
+    GET / POST /api/v1/admin/labour-rates/
+    Get or Update Admin Panel Labour Charges & Capacity Output parameters.
+    """
+    from .models import LabourRate
+    from .services.calculation_engine import get_active_labour_config
+
+    if request.method == 'POST':
+        data = request.data
+        rate_obj, _ = LabourRate.objects.get_or_create(is_active=True)
+        if 'head_mason_daily_wage' in data:
+            rate_obj.head_mason_daily_wage = data['head_mason_daily_wage']
+        if 'skilled_labour_daily_wage' in data:
+            rate_obj.skilled_labour_daily_wage = data['skilled_labour_daily_wage']
+        if 'helper_daily_wage' in data:
+            rate_obj.helper_daily_wage = data['helper_daily_wage']
+        if 'rcc_structure_rate_sqft' in data:
+            rate_obj.rcc_structure_rate_sqft = data['rcc_structure_rate_sqft']
+        if 'brickwork_plaster_rate_sqft' in data:
+            rate_obj.brickwork_plaster_rate_sqft = data['brickwork_plaster_rate_sqft']
+        if 'tile_flooring_rate_sqft' in data:
+            rate_obj.tile_flooring_rate_sqft = data['tile_flooring_rate_sqft']
+        if 'plumbing_elec_rate_sqft' in data:
+            rate_obj.plumbing_elec_rate_sqft = data['plumbing_elec_rate_sqft']
+        if 'painting_rate_sqft' in data:
+            rate_obj.painting_rate_sqft = data['painting_rate_sqft']
+        if 'daily_mason_team_output_sqft' in data:
+            rate_obj.daily_mason_team_output_sqft = data['daily_mason_team_output_sqft']
+        rate_obj.save()
+
+        return Response({
+            "message": "Labour charges & work capacity rates updated successfully in Database!",
+            "labour_config": get_active_labour_config()
+        }, status=status.HTTP_200_OK)
+
+    return Response({
+        "labour_config": get_active_labour_config()
+    }, status=status.HTTP_200_OK)
+
+
+
